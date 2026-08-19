@@ -1,8 +1,16 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, protocol, net } from 'electron'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { pathToFileURL, fileURLToPath } from 'node:url'
+import { registerIpc } from './ipc.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
+// Рендерер живе на http:// у деві, тож file:// для нього закритий.
+// Власна схема zb:// віддає файли з диска контрольовано — без
+// вимкнення webSecurity і без доступу до всієї файлової системи з JS.
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'zb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+])
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -11,8 +19,6 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     show: false,
-    // Заголовок прихований, кнопки лишаються — стандартний вигляд
-    // для застосунків-бібліотек на macOS.
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#0e0e11',
     webPreferences: {
@@ -23,7 +29,6 @@ function createWindow() {
 
   win.on('ready-to-show', () => win.show())
 
-  // Зовнішні посилання — у системний браузер, не всередині застосунку.
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
@@ -37,7 +42,14 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  protocol.handle('zb', (request) => {
+    const path = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, ''))
+    return net.fetch(pathToFileURL(path).toString())
+  })
+
+  registerIpc()
   createWindow()
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
