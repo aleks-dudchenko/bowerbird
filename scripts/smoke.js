@@ -13,7 +13,7 @@ process.on('unhandledRejection', (err) => {
   console.error('\nunhandled rejection:', err)
   app.exit(1)
 })
-import { rm, mkdir, readdir, stat, writeFile } from 'node:fs/promises'
+import { rm, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { copyFile } from 'node:fs/promises'
@@ -122,7 +122,30 @@ app.whenReady().then(async () => {
   ok('OCR reads text out of an image', /pricing/i.test(recognised.ocr || ''), JSON.stringify(recognised.ocr))
   ok('the OCR timestamp is recorded', !!recognised.ocrAt)
 
-  console.log('\n6. Palette and flags')
+  console.log('\n6. Old sidecars migrate on load')
+  // Simulate a library written by the first version: no kind, no schema,
+  // no fields added since. Every feature that branches on kind was
+  // silently skipping these.
+  const victim = added.find((a) => a.kind === 'image')
+  const victimSidecar = victim.path.replace(/\.[^.]+$/, '.json')
+  const original = JSON.parse(await readFile(victimSidecar, 'utf8'))
+  const legacy = { ...original }
+  for (const gone of ['kind', 'schema', 'colors', 'favourite', 'collections', 'autoTags', 'ocr', 'deletedAt']) {
+    delete legacy[gone]
+  }
+  await writeFile(victimSidecar, JSON.stringify(legacy, null, 2))
+
+  idx = await loadIndex(ROOT)
+  const healed = idx.items.find((i) => i.id === victim.id)
+  ok('kind is restored from the file extension', healed?.kind === 'image', String(healed?.kind))
+  ok('the schema version is stamped', healed?.schema === 1)
+  ok('array fields default rather than stay undefined',
+    Array.isArray(healed?.collections) && Array.isArray(healed?.autoTags))
+  const onDisk = JSON.parse(await readFile(victimSidecar, 'utf8'))
+  ok('the repair is written back, not recomputed every launch', onDisk.kind === 'image')
+  ok('user data survived the migration', onDisk.title === original.title)
+
+  console.log('\n7. Palette and flags')
   const red = added.find((a) => a.title === 'sample-1')
   ok('a palette was extracted on import', red.colors.length > 0, `${red.colors.length} colours`)
   ok('the dominant colour matches the fixture',
@@ -145,7 +168,7 @@ app.whenReady().then(async () => {
   ok('backfill recomputes a missing palette', refilled.colors.length > 0)
 
   const total = (await loadIndex(ROOT)).items.length
-  console.log('\n7. Spaces')
+  console.log('\n8. Spaces')
   let space = await createSpace(ROOT, 'Test board')
   space = await writeSpace(ROOT, {
     ...space,
@@ -164,7 +187,7 @@ app.whenReady().then(async () => {
   ok('list returns a summary, not full nodes',
     summary[0].nodeCount === 3 && summary[0].nodes === undefined)
 
-  console.log('\n8. Trash keeps the file on disk')
+  console.log('\n9. Trash keeps the file on disk')
   await trashItem(added[0])
   idx = await loadIndex(ROOT)
   ok('trashed item leaves the library', idx.items.length === total - 1, `${idx.items.length}`)
@@ -174,7 +197,7 @@ app.whenReady().then(async () => {
   idx = await loadIndex(ROOT)
   ok('restore brings it back', idx.items.length === total)
 
-  console.log('\n9. Cache is rebuildable (the core architectural claim)')
+  console.log('\n10. Cache is rebuildable (the core architectural claim)')
   await rm(join(ROOT, '.zbirka'), { recursive: true, force: true })
   idx = await loadIndex(ROOT)
   const spacesAfter = await listSpaces(ROOT)

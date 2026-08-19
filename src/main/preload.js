@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('zbirka', {
 
   indexForAi: (root) => ipcRenderer.invoke('ai:index', root),
   cancelAi: () => ipcRenderer.invoke('ai:cancel'),
+  helperStatus: () => ipcRenderer.invoke('ai:helperStatus'),
   semanticQuery: (root, text, k) => ipcRenderer.invoke('ai:query', root, text, k),
   autoTag: (root, items) => ipcRenderer.invoke('ai:autoTag', root, items),
   runOcr: (items) => ipcRenderer.invoke('ocr:run', items),

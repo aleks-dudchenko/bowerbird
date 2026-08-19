@@ -1,6 +1,7 @@
 import { app } from 'electron'
-import { mkdir, readFile, writeFile, readdir, stat, rename } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, readdir, stat, rename, unlink } from 'node:fs/promises'
 import { join, dirname, resolve, sep } from 'node:path'
+import { migration } from '../shared/migrate.js'
 
 // Library layout. The core decision of this project: the folder is the
 // source of truth.
@@ -26,10 +27,15 @@ export async function readSettings() {
   }
 }
 
-export async function writeSettings(patch) {
-  const next = { ...(await readSettings()), ...patch }
-  await writeAtomic(SETTINGS(), JSON.stringify(next, null, 2))
-  return next
+// Settings are patched from several places at once — window bounds, the
+// open mode, canvas viewports, the server token. Without serialising, two
+// read-modify-write cycles interleave and one of them is simply lost.
+export function writeSettings(patch) {
+  return withLock(SETTINGS(), async () => {
+    const next = { ...(await readSettings()), ...patch }
+    await writeAtomic(SETTINGS(), JSON.stringify(next, null, 2))
+    return next
+  })
 }
 
 export const itemsDir = (root) => join(root, 'items')
@@ -38,14 +44,36 @@ export const cacheDir = (root) => join(root, '.zbirka')
 export const thumbsDir = (root) => join(root, '.zbirka', 'thumbs')
 export const previewsDir = (root) => join(root, '.zbirka', 'previews')
 
+// One promise chain per path, so concurrent writers to the same file
+// queue instead of racing.
+const locks = new Map()
+
+export function withLock(key, fn) {
+  const previous = locks.get(key) ?? Promise.resolve()
+  const next = previous.then(fn, fn)
+  // Keep the chain alive but never let a rejection poison later writers.
+  locks.set(key, next.then(() => {}, () => {}))
+  return next
+}
+
 // Spaces are rewritten on every drag commit, so a torn write would cost
-// the user real work. Write to a sibling temp file and rename — rename
-// is atomic within a filesystem.
+// the user real work. Write to a sibling temp file and rename — rename is
+// atomic within a filesystem.
+//
+// The temp name must be unique: a fixed `${path}.tmp` meant two
+// concurrent writers shared one scratch file, and the second rename threw
+// ENOENT because the first had already moved it away.
+let writeCounter = 0
 export async function writeAtomic(path, contents) {
   await mkdir(dirname(path), { recursive: true })
-  const tmp = `${path}.tmp`
-  await writeFile(tmp, contents)
-  await rename(tmp, path)
+  const tmp = `${path}.${process.pid}.${writeCounter++}.tmp`
+  try {
+    await writeFile(tmp, contents)
+    await rename(tmp, path)
+  } catch (err) {
+    await unlink(tmp).catch(() => {})
+    throw err
+  }
 }
 
 export async function ensureLibrary(root) {
@@ -99,7 +127,18 @@ export async function loadIndex(root) {
 
   for (const f of files) {
     try {
-      const meta = JSON.parse(await readFile(f, 'utf8'))
+      let meta = JSON.parse(await readFile(f, 'utf8'))
+
+      // Libraries outlive the code that wrote them. Anything derivable
+      // from the file is filled in once, here, and written back — an
+      // item missing `kind` was invisible to every feature that checks
+      // it, with nothing anywhere reporting why.
+      const patch = migration(meta)
+      if (patch) {
+        meta = { ...meta, ...patch }
+        await writeAtomic(f, JSON.stringify(meta, null, 2))
+      }
+
       const file = join(dirname(f), meta.file)
       await stat(file) // original is gone — skip the record
       const record = {

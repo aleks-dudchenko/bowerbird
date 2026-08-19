@@ -15,6 +15,7 @@ const MAX_BYTES = 64 * 1024 * 1024
 
 let server = null
 let bound = false
+let bindError = null
 
 export async function getToken() {
   const s = await readSettings()
@@ -109,7 +110,7 @@ async function fetchImage(url) {
 }
 
 export function startServer(onSaved) {
-  if (server) return { running: bound, port: PORT }
+  if (server) return serverStatus()
 
   server = createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, {})
@@ -159,15 +160,41 @@ export function startServer(onSaved) {
     }
   })
 
-  server.on('error', () => { bound = false })
-  server.listen(PORT, '127.0.0.1', () => { bound = true })
-  return { running: true, port: PORT }
+  // Failing to bind used to leave the app quietly not listening, with no
+  // way for the user to find out why the extension had stopped working.
+  server.on('error', (err) => {
+    bound = false
+    bindError =
+      err.code === 'EADDRINUSE'
+        ? `Port ${PORT} is already in use by another program.`
+        : err.message
+  })
+  server.listen(PORT, '127.0.0.1', () => {
+    bound = true
+    bindError = null
+  })
+  return serverStatus()
 }
 
 export function stopServer() {
   server?.close()
   server = null
   bound = false
+  bindError = null
 }
 
-export const serverStatus = () => ({ running: bound, port: PORT })
+export const serverStatus = () => ({ running: bound, port: PORT, error: bindError })
+
+/** Resolves once the socket is listening, or rejects with the bind error. */
+export function whenListening(timeoutMs = 3000) {
+  return new Promise((resolve, reject) => {
+    const started = Date.now()
+    const poll = () => {
+      if (bound) return resolve(serverStatus())
+      if (bindError) return reject(new Error(bindError))
+      if (Date.now() - started > timeoutMs) return reject(new Error('server did not start'))
+      setTimeout(poll, 25)
+    }
+    poll()
+  })
+}

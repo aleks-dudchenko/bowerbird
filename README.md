@@ -62,9 +62,14 @@ Video: MP4, MOV, M4V, WEBM — a poster frame is extracted on import
 
 ```
 npm install
+make -C helper   # the Swift binary used for video, OCR, PDF and HEIC
 npm run dev      # start the app
-npm run verify   # build + unit tests + disk layer + save server
+npm run verify   # build + lint + unit tests + disk layer + save server
 ```
+
+`npm run verify` needs port 47821 free, so close any running copy of the
+app first — the save-server suite refuses to run against a foreign
+process rather than silently testing the wrong one.
 
 ### Browser extension
 

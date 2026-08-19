@@ -5,6 +5,7 @@ import sharp from 'sharp'
 import { shell } from 'electron'
 import { itemsDir, thumbsDir, writeAtomic } from './library.js'
 import { extractPalette } from './palette.js'
+import { SCHEMA } from '../shared/migrate.js'
 import { videoPoster, quickLookThumb, recogniseText } from './helper.js'
 
 const IMAGE_EXT = new Set([
@@ -149,7 +150,7 @@ export async function ingestFile(root, srcPath, extra = {}) {
   const colors = await extractPalette(thumb).catch(() => [])
 
   const meta = {
-    schema: 1,
+    schema: SCHEMA,
     id,
     file: `${id}${ext}`,
     kind,
@@ -214,7 +215,7 @@ export async function purgeItem(item) {
 // reported to the window.
 export async function backfillPalette(item) {
   const colors = await extractPalette(item.thumb).catch(() => [])
-  return updateSidecar(item, { colors, schema: 1 })
+  return updateSidecar(item, { colors, schema: SCHEMA })
 }
 
 

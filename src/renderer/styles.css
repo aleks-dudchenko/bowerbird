@@ -591,3 +591,7 @@ button { font: inherit; }
    click promotes them. A guess must never look like a decision. */
 .tag.is-suggested { border-style: dashed; color: var(--faint); }
 .tag.is-suggested:hover { color: var(--accent); border-color: var(--accent); }
+
+.ai-progress.is-error { color: var(--danger); border-color: var(--danger); }
+
+.is-error-text { color: var(--danger); }

@@ -8,6 +8,7 @@ import {
 import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './spaces.js'
 import { getToken, rotateToken, serverStatus } from './server.js'
 import { indexLibrary, query as semanticQuery, autoTag, cancelIndexing } from './ai.js'
+import { helperPath, searchedPaths } from './helper.js'
 import { runOcr } from './ingest.js'
 
 // One event envelope instead of a channel per notification. Import
@@ -152,16 +153,29 @@ export function registerIpc() {
     indexLibrary(root, (p) => emit(e.sender, 'ai:progress', p))
   )
   ipcMain.handle('ai:cancel', async () => { cancelIndexing(); return true })
+  ipcMain.handle('ai:helperStatus', async () => ({
+    found: await helperPath(),
+    searched: searchedPaths(),
+  }))
   ipcMain.handle('ai:query', async (_e, root, text, k) => semanticQuery(root, text, k))
   ipcMain.handle('ai:autoTag', async (e, root, items) =>
     autoTag(root, items, (p) => emit(e.sender, 'ai:progress', p))
   )
+  // Failures used to be swallowed here, which meant a missing helper
+  // binary looked exactly like "there was no text to find". Report them.
   ipcMain.handle('ocr:run', async (e, items) => {
     let done = 0
+    let failed = 0
+    let lastError = null
     for (const item of items) {
-      try { await runOcr(item) } catch { /* unreadable image */ }
+      try {
+        await runOcr(item)
+      } catch (err) {
+        failed += 1
+        lastError = err.message
+      }
       emit(e.sender, 'ai:progress', { phase: 'ocr', done: ++done, total: items.length })
     }
-    return { done }
+    return { done, failed, error: lastError }
   })
 }

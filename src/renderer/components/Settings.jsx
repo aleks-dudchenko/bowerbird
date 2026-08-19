@@ -10,9 +10,12 @@ export default function Settings({ onClose, root, items }) {
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [ai, setAi] = useState(null)
+  const [helper, setHelper] = useState(null)
+  const [result, setResult] = useState(null)
 
   useEffect(() => {
     api.serverStatus().then(setStatus)
+    api.helperStatus().then(setHelper)
     return api.onEvent((e) => e.type === 'ai:progress' && setAi(e))
   }, [])
 
@@ -60,7 +63,11 @@ export default function Settings({ onClose, root, items }) {
 
         <dl className="meta">
           <dt>Status</dt>
-          <dd>{status?.running ? `listening on port ${status.port}` : 'not listening'}</dd>
+          <dd className={status && !status.running ? 'is-error-text' : ''}>
+            {status?.running
+              ? `listening on port ${status.port}`
+              : status?.error || 'not listening'}
+          </dd>
         </dl>
 
         <p className="muted">
@@ -77,6 +84,15 @@ export default function Settings({ onClose, root, items }) {
           150&nbsp;MB and downloads the first time you use it; nothing is sent
           anywhere, and there is no API key.
         </p>
+
+        {helper && !helper.found && (
+          <div className="ai-progress is-error">
+            The system helper is missing, so video, OCR, PDF and HEIC will not
+            work. Build it with <code>make -C helper</code>.
+          </div>
+        )}
+
+        {result && <div className="ai-progress">{result}</div>}
 
         {ai && (
           <div className="ai-progress">
@@ -104,7 +120,16 @@ export default function Settings({ onClose, root, items }) {
           <button
             className="ghost"
             disabled={busy || !items?.length}
-            onClick={() => api.runOcr(items.filter((i) => i.kind === 'image' && !i.ocr))}
+            onClick={async () => {
+              const targets = items.filter((i) => i.kind === 'image' && !i.ocr)
+              if (!targets.length) return setResult('Every image has already been read.')
+              const r = await api.runOcr(targets)
+              setResult(
+                r.failed
+                  ? `Failed on ${r.failed} of ${r.done}: ${r.error}`
+                  : `Read ${r.done} image${r.done === 1 ? '' : 's'}.`
+              )
+            }}
           >
             Read text in images
           </button>

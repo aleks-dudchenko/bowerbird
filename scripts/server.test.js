@@ -20,7 +20,8 @@ const BASE = join(tmpdir(), `zbirka-server-${process.pid}`)
 app.setPath('userData', join(BASE, 'userData'))
 
 const { ensureLibrary, writeSettings, loadIndex } = await import('../src/main/library.js')
-const { startServer, stopServer, getToken, rotateToken, PORT } = await import('../src/main/server.js')
+const { startServer, stopServer, getToken, rotateToken, whenListening, PORT } =
+  await import('../src/main/server.js')
 
 const ROOT = join(BASE, 'lib')
 const URL = `http://127.0.0.1:${PORT}/save`
@@ -54,7 +55,18 @@ app.whenReady().then(async () => {
 
   let saved = null
   startServer((item) => { saved = item })
-  await new Promise((r) => setTimeout(r, 400))
+
+  // Bail out rather than test against whatever else happens to hold the
+  // port. An earlier version slept and hoped, and spent a debugging
+  // session talking to a running copy of the app with a different token.
+  try {
+    await whenListening()
+  } catch (err) {
+    console.error(`\ncannot bind port ${PORT}: ${err.message}`)
+    console.error('close any running copy of Zbirka and try again\n')
+    app.exit(1)
+    return
+  }
 
   console.log('\n1. Authentication')
   const noToken = await post({ url: dataUrl })
@@ -83,7 +95,7 @@ app.whenReady().then(async () => {
   ok('sourceUrl is recorded', items[0]?.sourceUrl === 'https://example.com/article', items[0]?.sourceUrl)
   ok('dimensions were probed', items[0]?.width === 300 && items[0]?.height === 200)
   ok('a thumbnail was generated', (await readdir(join(ROOT, '.zbirka', 'thumbs'))).length === 1)
-  ok('the callback fired for the open window', saved?.id === body.id)
+  ok('the callback fired for the open window', !!saved && saved.id === body.id)
 
   console.log('\n4. Validation')
   const noUrl = await post({}, token)

@@ -32,6 +32,9 @@ export async function helperPath() {
   return null
 }
 
+/** Where the helper was looked for. Shown in Settings when it is missing. */
+export const searchedPaths = () => candidates()
+
 async function call(args, timeout = 30_000) {
   const bin = await helperPath()
   if (!bin) throw new Error('zbirka-helper is missing — run `make -C helper`')
