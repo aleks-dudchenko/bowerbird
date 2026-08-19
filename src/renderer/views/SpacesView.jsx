@@ -6,7 +6,7 @@ const api = window.zbirka
 
 export default function SpacesView({
   root, items, byId, space, spaces, onOpen, onCreate, onRemoveSpace, onRename,
-  onAddItems, onMove, onRemoveNodes, onBringToFront, onDropFiles,
+  onAddItems, onMove, onRemoveNodes, onBringToFront, onDropFiles, onFocusItem,
 }) {
   const [selectedNodeIds, setSelectedNodeIds] = useState(new Set())
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 })
@@ -22,6 +22,22 @@ export default function SpacesView({
       setViewport(viewports?.[space.id] || { x: 0, y: 0, zoom: 1 })
     })
   }, [space?.id])
+
+  // The detail panel is shared with the library view, so selecting a node
+  // has to drive it. Without this the panel keeps showing whatever was
+  // last picked in the grid, which reads as a bug.
+  const selectNodes = useCallback(
+    (next) => {
+      setSelectedNodeIds(next)
+      if (next.size === 1) {
+        const nodeId = [...next][0]
+        onFocusItem(space?.nodes.find((n) => n.nodeId === nodeId)?.itemId ?? null)
+      } else {
+        onFocusItem(null)
+      }
+    },
+    [space, onFocusItem]
+  )
 
   const persistViewport = useCallback(
     async (next) => {
@@ -106,7 +122,7 @@ export default function SpacesView({
         nodes={space.nodes}
         byId={byId}
         selectedNodeIds={selectedNodeIds}
-        onSelect={setSelectedNodeIds}
+        onSelect={selectNodes}
         onMove={onMove}
         onRemove={onRemoveNodes}
         onBringToFront={onBringToFront}

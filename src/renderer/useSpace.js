@@ -40,9 +40,22 @@ export function useSpace(root) {
     return list
   }, [root])
 
+  // Reopen whatever board was last open. lastSpaceId was already being
+  // written on every open and never read back, so every launch dropped
+  // the user on the picker regardless of what they had been working on.
   useEffect(() => {
-    refreshSpaces()
-  }, [refreshSpaces])
+    let cancelled = false
+    ;(async () => {
+      const list = await refreshSpaces()
+      if (cancelled || !root || !list.length) return
+      const { lastSpaceId } = await api.getSettings(['lastSpaceId'])
+      const target = list.find((s) => s.id === lastSpaceId) || null
+      if (!cancelled && target) {
+        setSpace(await api.readSpace(root, target.id))
+      }
+    })()
+    return () => { cancelled = true }
+  }, [refreshSpaces, root])
 
   const commit = useCallback(
     (next) => {
@@ -89,26 +102,42 @@ export function useSpace(root) {
 
   // Placement keeps the natural aspect ratio and caps the long side, so
   // a 6000px export does not land as a wall-sized rectangle.
+  //
+  // Adding one item at a time from the tray used to drop every one of
+  // them on the same coordinates, so each new node hid the last and the
+  // board looked like nothing had happened. Cascade off whatever is
+  // already sitting at the target instead.
   const addItems = useCallback(
     (items, at = { x: 0, y: 0 }) => {
       if (!space || !items.length) return
       let z = space.nodes.reduce((m, n) => Math.max(m, n.z), 0)
-      const nodes = items.map((item, i) => {
+      const taken = [...space.nodes]
+
+      const nodes = items.map((item) => {
         const ratio = item.width && item.height ? item.height / item.width : 0.66
         const w = 320
-        return {
+        let x = Math.round(at.x)
+        let y = Math.round(at.y)
+        while (taken.some((n) => Math.abs(n.x - x) < 12 && Math.abs(n.y - y) < 12)) {
+          x += 28
+          y += 28
+        }
+        const node = {
           nodeId: newNodeId(),
           type: 'item',
           itemId: item.id,
-          x: Math.round(at.x + i * 28),
-          y: Math.round(at.y + i * 28),
+          x,
+          y,
           w,
           h: Math.round(w * ratio),
           z: ++z,
           rotation: 0,
           opacity: 1,
         }
+        taken.push(node)
+        return node
       })
+
       commit({ ...space, nodes: [...space.nodes, ...nodes] })
     },
     [space, commit]

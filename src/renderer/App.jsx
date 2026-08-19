@@ -31,8 +31,14 @@ export default function App() {
 
   const changeMode = useCallback((next) => {
     setMode(next)
+    setSelectedIds(new Set())
     api.patchSettings({ mode: next })
   }, [])
+
+  const focusItem = useCallback(
+    (itemId) => setSelectedIds(itemId ? new Set([itemId]) : new Set()),
+    []
+  )
 
   // Selection is a set of ids, not a copy of an item. The canvas needs
   // multi-select and both views share the panel, so holding a stale
@@ -134,6 +140,7 @@ export default function App() {
           onRemoveNodes={space.removeNodes}
           onBringToFront={space.bringToFront}
           onDropFiles={dropOntoCanvas}
+          onFocusItem={focusItem}
         />
       )}
 
