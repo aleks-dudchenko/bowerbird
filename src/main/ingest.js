@@ -1,11 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { copyFile, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, access } from 'node:fs/promises'
 import { join, extname, basename } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import sharp from 'sharp'
 import ffmpegPath from 'ffmpeg-static'
-import { itemsDir, thumbsDir } from './library.js'
+import { shell } from 'electron'
+import { itemsDir, thumbsDir, writeAtomic } from './library.js'
 
 const run = promisify(execFile)
 
@@ -80,9 +81,23 @@ export async function ingestFile(root, srcPath, extra = {}) {
   )
   await mkdir(dir, { recursive: true })
 
-  const id = randomUUID().slice(0, 12)
+  // randomUUID().slice(0, 12) kept a literal dash and left only 44 bits
+  // of entropy. Strip the dashes and check the destination before
+  // copying — a silent overwrite would destroy someone's reference.
   const ext = extname(srcPath).toLowerCase()
-  const dest = join(dir, `${id}${ext}`)
+  let id
+  let dest
+  for (let attempt = 0; ; attempt++) {
+    id = randomUUID().replace(/-/g, '').slice(0, 12)
+    dest = join(dir, `${id}${ext}`)
+    try {
+      await access(dest)
+      if (attempt > 4) throw new Error('could not allocate a free id')
+    } catch (err) {
+      if (err.message === 'could not allocate a free id') throw err
+      break // access() threw ENOENT, so the path is free
+    }
+  }
   const thumb = join(thumbsDir(root), `${id}.webp`)
 
   await copyFile(srcPath, dest)
@@ -131,9 +146,10 @@ export async function ingestFile(root, srcPath, extra = {}) {
     tags: [],
     note: '',
     sourceUrl: extra.sourceUrl || null,
+    deletedAt: null,
   }
 
-  await writeFile(join(dir, `${id}.json`), JSON.stringify(meta, null, 2))
+  await writeAtomic(join(dir, `${id}.json`), JSON.stringify(meta, null, 2))
   return { ...meta, path: dest, thumb }
 }
 
@@ -141,18 +157,31 @@ export async function ingestFile(root, srcPath, extra = {}) {
 export async function updateSidecar(item, patch) {
   const sidecar = item.path.replace(/\.[^.]+$/, '.json')
   const next = { ...JSON.parse(await readFile(sidecar, 'utf8')), ...patch }
-  await writeFile(sidecar, JSON.stringify(next, null, 2))
+  await writeAtomic(sidecar, JSON.stringify(next, null, 2))
   return next
 }
 
-// Deletes original, sidecar and thumbnail. No trash yet — see M2.
-export async function removeItem(item) {
+// Trashing does not move files. It stamps deletedAt in the sidecar and
+// loadIndex filters those out. No file movement means no sync conflicts
+// in a Dropbox folder, and restoring is clearing one field.
+export async function trashItem(item) {
+  return updateSidecar(item, { deletedAt: new Date().toISOString() })
+}
+
+export async function restoreItem(item) {
+  return updateSidecar(item, { deletedAt: null })
+}
+
+// Emptying the trash hands the originals to the OS trash rather than
+// unlinking them, so Finder remains the last line of recovery.
+export async function purgeItem(item) {
   const sidecar = item.path.replace(/\.[^.]+$/, '.json')
   for (const f of [item.path, sidecar, item.thumb]) {
     try {
-      await unlink(f)
+      await shell.trashItem(f)
     } catch {
-      /* already gone */
+      /* already gone, or not trashable — nothing to recover either way */
     }
   }
+  return true
 }

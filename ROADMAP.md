@@ -15,10 +15,16 @@ MyLibrary/                     ← safe to put in Dropbox / iCloud
 ├─ items/
 │  ├─ 2026/08/a7f3k2.png       original
 │  └─ 2026/08/a7f3k2.json      sidecar: tags, note, source, dimensions
-└─ .zbirka/
-   ├─ index.db                 SQLite cache (from M2)
-   └─ thumbs/
+├─ spaces/
+│  └─ s7f2k1.json              a board: positioned references
+└─ .zbirka/                    rebuildable cache, safe to delete
+   ├─ thumbs/
+   └─ previews/
 ```
+
+Note that `spaces/` sits beside `items/`, not inside the cache. A board is
+authored work, not something derivable — deleting the cache must never
+destroy one.
 
 - `items/` syncs as ordinary files — no conflicts.
 - `.zbirka/` is **local to each machine** and fully rebuildable. Delete it
@@ -37,7 +43,7 @@ verifies that every record and tag survives.
 | UI | React + Vite | fast HMR, standard |
 | Images | sharp | thumbnails, resizing, metadata |
 | Video | ffmpeg-static | poster frame + duration on import |
-| Index | sidecar JSON → in-memory (M1), SQLite + FTS5 (M2) | database only when search needs one |
+| Index | sidecar JSON → in-memory | a database only if measurements demand one (see M4) |
 | AI | @huggingface/transformers (ONNX) | CLIP locally, offline after first download |
 | OCR | macOS Vision via a small Swift helper | better than tesseract, Ukrainian included |
 | Canvas | plain DOM + CSS transforms | simpler than konva for a first pass |
@@ -52,34 +58,47 @@ Library folder picker, drag-and-drop import, originals copied with
 sidecars, thumbnails, masonry grid, detail panel, tag and note editing,
 deletion. Video (MP4/MOV/M4V/WEBM) with extracted poster frames.
 
-**M2 — Search**
-SQLite + FTS5 over title, note and tags. Collections. Colour search via
-extracted palettes. Keyboard navigation: `j/k` move, `t` tag, `b` collect,
-`f` favourite, `/` search. Trash instead of hard delete.
+The order changed after M1: the canvas moved ahead of search because it is
+what makes this different from a folder with thumbnails, and the browser
+extension moved ahead of search too — search only earns its keep once the
+library is large, and the extension is what makes it large.
 
-**M3 — Canvas**
-Spaces: infinite canvas, pan and zoom, drag items, multi-select, snap
-guides, positions persisted per space.
+**M2 — Spaces** ✅
+Boards stored as plain JSON beside `items/`. Infinite canvas on plain DOM:
+pan, zoom to cursor, drag with snap guides, marquee multi-select, keyboard
+nudging. Drop files straight onto the canvas to import and place in one
+gesture. A tray and tag rail stand in for search until it arrives. Trash
+that stamps `deletedAt` rather than deleting, with undo.
 
-**M4 — AI and formats**
-CLIP indexing with progress, semantic search, OCR helper, zero-shot
-tagging. HEIC, PDF and Lottie previews. Rediscover mode.
+**M3 — Browser extension**
+MV3 extension, "Save to Zbirka" context menu, loopback HTTP with a bearer
+token, server only alive while the app is running. Fills `sourceUrl`.
 
-**M5 — Browser extension**
-MV3 extension, "Save to Zbirka" context menu, loopback HTTP with a token,
-server only alive while the app is running.
+**M4 — Search**
+Full-text over title, note and tags from an in-memory inverted index with a
+snapshot on disk — no SQLite unless a cold launch on a 50k-item library
+exceeds two seconds. Collections, colour search from stored palettes,
+keyboard navigation: `j/k` move, `t` tag, `b` collect, `f` favourite,
+`/` search.
+
+**M5 — AI and formats**
+Local CLIP for semantic search. A single Swift helper covering Vision OCR,
+AVFoundation poster frames and QuickLook thumbnails — which also removes
+the ffmpeg dependency entirely. HEIC and PDF. Zero-shot auto-tags, kept in
+their own field so they never overwrite what a human typed.
 
 **M6 — Release**
-GitHub Actions building signed `.dmg` artefacts, contribution guide,
-issue templates.
+GitHub Actions, electron-builder, contribution guide, issue templates,
+third-party licence notices.
 
 ## Known risks
 
 | Risk | Mitigation |
 |---|---|
-| Prebuilt sharp may lack libheif | verify before promising HEIC |
+| **`ffmpeg-static` is not redistributable** — the bundled binary reports "nonfree parts compiled in", and the package is GPL-3.0 | **Blocks any binary release.** Replaced by the Swift helper in M5; until then it is a local-development dependency only |
 | CLIP weights ~150 MB on first run | download on first AI action, not at install |
 | macOS Vision may not support `uk` | check `supportedRecognitionLanguages` at M4 and document the real list |
-| `ffmpeg-static` binary needs asar unpacking when packaged | handle in electron-builder config at M6 |
+| HEIC | resolved — the bundled libvips reports `heif` input support, so it is an extension-list change |
+| PDF | sharp cannot decode it; QuickLook via the M5 helper covers PDF and HEIC in one path |
 | Electron bundle size (~120 MB dmg) | accepted cost of development speed |
 | Unsigned builds need `xattr -dr com.apple.quarantine` | document in README until an Apple Developer certificate exists |

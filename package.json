@@ -1,7 +1,7 @@
 {
   "name": "zbirka",
   "version": "0.0.1",
-  "description": "Локальна бібліотека дизайн-референсів. Офлайн, без акаунта, файли твої.",
+  "description": "A local, offline design-reference library. Your files stay in a plain folder.",
   "license": "MIT",
   "author": "Aleks Dudchenko",
   "type": "module",

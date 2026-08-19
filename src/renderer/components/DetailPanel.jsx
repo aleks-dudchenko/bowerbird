@@ -3,7 +3,7 @@ import { srcOf } from './Grid.jsx'
 
 const api = window.zbirka
 
-export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
+export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
   const [title, setTitle] = useState(item.title)
   const [note, setNote] = useState(item.note || '')
   const [tagDraft, setTagDraft] = useState('')
@@ -32,7 +32,7 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
         <button className="ghost" onClick={onClose}>Close</button>
         <div className="spacer" />
         <button className="ghost" onClick={() => api.revealInFinder(item)}>Finder</button>
-        <button className="danger" onClick={() => onRemove(item)}>Delete</button>
+        <button className="danger" onClick={() => onTrash(item)}>Trash</button>
       </div>
 
       <div className="detail-preview">
@@ -100,6 +100,16 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
         <dd>{new Date(item.addedAt).toLocaleDateString('en-GB')}</dd>
         <dt>File</dt>
         <dd className="mono">{item.file}</dd>
+        {item.sourceUrl && (
+          <>
+            <dt>Source</dt>
+            <dd>
+              <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+                {new URL(item.sourceUrl).hostname}
+              </a>
+            </dd>
+          </>
+        )}
       </dl>
     </aside>
   )

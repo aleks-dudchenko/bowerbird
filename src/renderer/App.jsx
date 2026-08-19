@@ -1,153 +1,155 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import Grid from './components/Grid.jsx'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLibrary } from './useLibrary.js'
+import { useSpace } from './useSpace.js'
+import { useDropTarget } from './useDropTarget.js'
+import TitleBar from './components/TitleBar.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
+import Toast from './components/Toast.jsx'
+import LibraryView from './views/LibraryView.jsx'
+import SpacesView from './views/SpacesView.jsx'
 
 const api = window.zbirka
 
+// Shell only: which mode is showing, what is selected, and the drop
+// target shared by both views. All library state lives in useLibrary,
+// all board state in useSpace.
 export default function App() {
-  const [root, setRoot] = useState(null)
-  const [items, setItems] = useState([])
-  const [selected, setSelected] = useState(null)
-  const [dragging, setDragging] = useState(false)
-  const [progress, setProgress] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const dragDepth = useRef(0)
+  const [mode, setMode] = useState('library')
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [toast, setToast] = useState(null)
+  const [query, setQuery] = useState('')
+  const [activeTags, setActiveTags] = useState(new Set())
 
-  const refresh = useCallback(async (dir) => {
-    if (!dir) return
-    setItems(await api.loadLibrary(dir))
+  const showToast = useCallback((message, action) => setToast({ message, action }), [])
+
+  const lib = useLibrary({ onToast: showToast })
+  const space = useSpace(lib.root)
+
+  useEffect(() => {
+    api.getSettings(['mode']).then(({ mode: saved }) => saved && setMode(saved))
+  }, [])
+
+  const changeMode = useCallback((next) => {
+    setMode(next)
+    api.patchSettings({ mode: next })
+  }, [])
+
+  // Selection is a set of ids, not a copy of an item. The canvas needs
+  // multi-select and both views share the panel, so holding a stale
+  // object here would mean reconciling it by hand in two places.
+  const focused = useMemo(() => {
+    if (selectedIds.size !== 1) return null
+    return lib.byId.get([...selectedIds][0]) ?? null
+  }, [selectedIds, lib.byId])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return lib.items.filter((i) => {
+      if (activeTags.size && ![...activeTags].every((t) => (i.tags || []).includes(t))) return false
+      if (!q) return true
+      return `${i.title} ${(i.tags || []).join(' ')}`.toLowerCase().includes(q)
+    })
+  }, [lib.items, query, activeTags])
+
+  const { dragging, handlers } = useDropTarget(
+    useCallback((paths) => lib.addPaths(paths), [lib])
+  )
+
+  // Dropping straight onto the canvas imports and places in one gesture,
+  // which is the whole workflow when you are gathering a board.
+  const dropOntoCanvas = useCallback(
+    async (paths, at) => {
+      const added = await lib.addPaths(paths)
+      if (added.length) space.addItems(added, at)
+    },
+    [lib, space]
+  )
+
+  const addSelectionToSpace = useCallback(() => {
+    const chosen = [...selectedIds].map((id) => lib.byId.get(id)).filter(Boolean)
+    if (!chosen.length || !space.space) return
+    space.addItems(chosen, { x: 0, y: 0 })
+    showToast(`Added ${chosen.length} to “${space.space.name}”`)
+    changeMode('spaces')
+  }, [selectedIds, lib.byId, space, showToast, changeMode])
+
+  const toggleTag = useCallback((tag) => {
+    setActiveTags((prev) => {
+      const next = new Set(prev)
+      next.has(tag) ? next.delete(tag) : next.add(tag)
+      return next
+    })
   }, [])
 
   useEffect(() => {
-    ;(async () => {
-      const current = await api.currentLibrary()
-      setRoot(current)
-      await refresh(current)
-      setLoading(false)
-    })()
-    return api.onProgress(setProgress)
-  }, [refresh])
-
-  async function chooseLibrary() {
-    const dir = await api.chooseLibrary()
-    if (!dir) return
-    setRoot(dir)
-    setSelected(null)
-    await refresh(dir)
-  }
-
-  async function addPaths(paths) {
-    if (!root || !paths.length) return
-    setProgress({ done: 0, total: paths.length })
-    const { added, skipped } = await api.addItems(root, paths)
-    setProgress(null)
-    if (added.length) await refresh(root)
-    if (skipped) console.warn(`skipped, unsupported format: ${skipped}`)
-  }
-
-  // Escape clears the selection — expected behaviour for a detail panel.
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && setSelected(null)
+    const onKey = (e) => {
+      if (e.key === 'Escape') setSelectedIds(new Set())
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Depth counter: dragleave fires for every nested element, and without
-  // it the highlight flickers as the cursor moves across the grid.
-  const onDragEnter = (e) => {
-    e.preventDefault()
-    dragDepth.current += 1
-    setDragging(true)
-  }
-  const onDragLeave = () => {
-    dragDepth.current -= 1
-    if (dragDepth.current <= 0) setDragging(false)
-  }
-  const onDrop = (e) => {
-    e.preventDefault()
-    dragDepth.current = 0
-    setDragging(false)
-    const paths = [...e.dataTransfer.files].map((f) => api.pathForFile(f)).filter(Boolean)
-    addPaths(paths)
-  }
-
-  async function handleUpdate(item, patch) {
-    const next = await api.updateItem(item, patch)
-    const merged = { ...item, ...next }
-    setItems((prev) => prev.map((i) => (i.id === item.id ? merged : i)))
-    setSelected(merged)
-  }
-
-  async function handleRemove(item) {
-    await api.removeItem(item)
-    setItems((prev) => prev.filter((i) => i.id !== item.id))
-    setSelected(null)
-  }
-
-  if (loading) return <div className="app" />
+  if (lib.loading) return <div className="app" />
 
   return (
-    <div
-      className={`app ${dragging ? 'is-dragging' : ''}`}
-      onDragEnter={onDragEnter}
-      onDragOver={(e) => e.preventDefault()}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      <header className="titlebar">
-        <span className="wordmark">Zbirka</span>
-        {root && (
-          <>
-            <button className="path" onClick={() => api.revealLibrary(root)} title={root}>
-              {root.split('/').pop()}
-            </button>
-            <span className="count">{items.length}</span>
-            <div className="spacer" />
-            {progress && (
-              <span className="progress">
-                {progress.done} / {progress.total}
-              </span>
-            )}
-            <button className="ghost" onClick={chooseLibrary}>
-              Change folder
-            </button>
-          </>
-        )}
-      </header>
+    <div className={`app ${focused ? 'has-detail' : ''} ${dragging ? 'is-dragging' : ''}`} {...handlers}>
+      <TitleBar
+        root={lib.root}
+        count={lib.items.length}
+        mode={mode}
+        onMode={changeMode}
+        progress={lib.progress}
+        onChooseLibrary={lib.chooseLibrary}
+        onAddFiles={lib.addViaDialog}
+      />
 
-      {!root ? (
-        <main className="empty">
-          <div className="empty-inner">
-            <h1>Choose a library folder</h1>
-            <p>
-              Files are stored there as plain files, each with a sidecar holding
-              its tags. Put the folder in Dropbox or iCloud if you want it synced.
-            </p>
-            <button className="primary" onClick={chooseLibrary}>
-              Choose folder
-            </button>
-          </div>
-        </main>
-      ) : items.length === 0 ? (
-        <main className="empty">
-          <div className="empty-inner">
-            <h1>Library is empty</h1>
-            <p>Drop images or video here — they are copied into the library folder.</p>
-            <span className="hint">PNG · JPG · WEBP · GIF · AVIF · TIFF · SVG · MP4 · MOV · WEBM</span>
-          </div>
-        </main>
+      {mode === 'library' ? (
+        <LibraryView
+          root={lib.root}
+          items={filtered}
+          selectedIds={selectedIds}
+          onSelect={setSelectedIds}
+          onChooseLibrary={lib.chooseLibrary}
+          onAddFiles={lib.addViaDialog}
+          query={query}
+          onQuery={setQuery}
+          activeTags={activeTags}
+          onToggleTag={toggleTag}
+          onAddToSpace={addSelectionToSpace}
+          hasSpace={!!space.space}
+        />
       ) : (
-        <Grid items={items} selected={selected} onSelect={setSelected} />
-      )}
-
-      {selected && (
-        <DetailPanel
-          item={selected}
-          onClose={() => setSelected(null)}
-          onUpdate={handleUpdate}
-          onRemove={handleRemove}
+        <SpacesView
+          root={lib.root}
+          items={lib.items}
+          byId={lib.byId}
+          space={space.space}
+          spaces={space.spaces}
+          onOpen={space.open}
+          onCreate={space.create}
+          onRemoveSpace={space.remove}
+          onRename={space.rename}
+          onAddItems={space.addItems}
+          onMove={space.moveNodes}
+          onRemoveNodes={space.removeNodes}
+          onBringToFront={space.bringToFront}
+          onDropFiles={dropOntoCanvas}
         />
       )}
+
+      {focused && (
+        <DetailPanel
+          item={focused}
+          onClose={() => setSelectedIds(new Set())}
+          onUpdate={lib.updateItem}
+          onTrash={(item) => {
+            lib.trashItems([item])
+            setSelectedIds(new Set())
+          }}
+        />
+      )}
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {dragging && <div className="dropveil">Drop to add</div>}
     </div>

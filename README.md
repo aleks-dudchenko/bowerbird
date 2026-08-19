@@ -4,9 +4,11 @@ A local design-reference library for macOS. Offline, no account, no
 subscription. Your files stay in an ordinary folder — the app does not
 take ownership of them.
 
-> **Status: M1 — the library works.** Drag-and-drop import, sidecars,
-> thumbnails, masonry grid, editable tags and notes, video poster frames.
-> Search is next (M2). Roadmap: [ROADMAP.md](ROADMAP.md).
+> **Status: M2 — boards work.** Drag-and-drop import, sidecars, thumbnails,
+> masonry grid, editable tags and notes, video poster frames, and an
+> infinite canvas whose layout is a plain JSON file in your library folder.
+> Real search is still to come; a substring filter and tag rail stand in.
+> Roadmap: [ROADMAP.md](ROADMAP.md).
 
 ## Principles
 
@@ -26,7 +28,7 @@ Video: MP4, MOV, M4V, WEBM — a poster frame is extracted on import
 ```
 npm install
 npm run dev     # start the app
-npm run smoke   # 16 checks against the disk layer
+npm run smoke   # 24 checks against the disk layer, fixtures generated at runtime
 ```
 
 ## Licence
