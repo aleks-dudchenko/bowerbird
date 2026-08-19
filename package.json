@@ -10,7 +10,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "smoke": "electron scripts/smoke.js"
+    "smoke": "electron scripts/smoke.js",
+    "test": "node --test \"test/*.test.js\""
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

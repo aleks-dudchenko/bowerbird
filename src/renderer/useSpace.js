@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { freeSpot } from '../shared/canvas-math.js'
 
 const api = window.zbirka
 const COMMIT_DELAY = 600
@@ -116,12 +117,7 @@ export function useSpace(root) {
       const nodes = items.map((item) => {
         const ratio = item.width && item.height ? item.height / item.width : 0.66
         const w = 320
-        let x = Math.round(at.x)
-        let y = Math.round(at.y)
-        while (taken.some((n) => Math.abs(n.x - x) < 12 && Math.abs(n.y - y) < 12)) {
-          x += 28
-          y += 28
-        }
+        const { x, y } = freeSpot(taken, at)
         const node = {
           nodeId: newNodeId(),
           type: 'item',
