@@ -1,9 +1,10 @@
+import SearchBar from '../components/SearchBar.jsx'
 import Grid from '../components/Grid.jsx'
 import FilterRail from '../components/FilterRail.jsx'
 
 export default function LibraryView({
-  root, items, selectedIds, onSelect, onChooseLibrary, onAddFiles,
-  query, onQuery, activeTags, onToggleTag, onAddToSpace, hasSpace,
+  root, s, selectedIds, onSelect, onChooseLibrary, onAddFiles,
+  onAddToSpace, hasSpace, searchRef, trashCount, onOpenTrash,
 }) {
   if (!root) {
     return (
@@ -22,35 +23,45 @@ export default function LibraryView({
 
   return (
     <div className="library">
-      <div className="library-bar">
-        <input
-          className="search"
-          value={query}
-          placeholder="Filter by name or tag"
-          onChange={(e) => onQuery(e.target.value)}
-        />
-        {selectedIds.size > 0 && (
-          <button className="primary small" disabled={!hasSpace} onClick={onAddToSpace}>
-            Add {selectedIds.size} to space
-          </button>
-        )}
-      </div>
+      <SearchBar
+        ref={searchRef}
+        s={s}
+        count={s.results.length}
+        total={s.facets.tags.length ? undefined : undefined}
+        selectionSize={selectedIds.size}
+        hasSpace={hasSpace}
+        onAddToSpace={onAddToSpace}
+      />
 
-      <FilterRail items={items} active={activeTags} onToggle={onToggleTag} />
+      <FilterRail facets={s.facets} active={s.tags} onToggle={s.toggleTag} />
 
-      {items.length === 0 ? (
+      {s.results.length === 0 ? (
         <main className="empty">
           <div className="empty-inner">
-            <h1>Nothing here</h1>
-            <p>Drop images or video anywhere in the window, or use Add files.</p>
-            <button className="primary" onClick={onAddFiles}>Add files…</button>
-            <span className="hint">
-              PNG · JPG · WEBP · GIF · AVIF · TIFF · SVG · MP4 · MOV · WEBM
-            </span>
+            <h1>{s.active ? 'Nothing matches' : 'Library is empty'}</h1>
+            <p>
+              {s.active
+                ? 'Try fewer words, or clear the filters.'
+                : 'Drop images or video anywhere in the window, or use Add files.'}
+            </p>
+            {s.active
+              ? <button className="primary" onClick={s.clear}>Clear filters</button>
+              : <button className="primary" onClick={onAddFiles}>Add files…</button>}
+            {!s.active && (
+              <span className="hint">
+                PNG · JPG · WEBP · GIF · AVIF · TIFF · SVG · MP4 · MOV · WEBM
+              </span>
+            )}
           </div>
         </main>
       ) : (
-        <Grid items={items} selectedIds={selectedIds} onSelect={onSelect} />
+        <Grid items={s.results} selectedIds={selectedIds} onSelect={onSelect} />
+      )}
+
+      {trashCount > 0 && (
+        <button className="trash-tab" onClick={onOpenTrash}>
+          Trash · {trashCount}
+        </button>
       )}
     </div>
   )

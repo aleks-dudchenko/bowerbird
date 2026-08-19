@@ -3,7 +3,7 @@ import {
   readSettings, writeSettings, ensureLibrary, loadIndex, setAllowedRoot,
 } from './library.js'
 import {
-  ingestFile, trashItem, restoreItem, purgeItem, updateSidecar, kindOf,
+  ingestFile, trashItem, restoreItem, purgeItem, updateSidecar, kindOf, backfillPalette,
 } from './ingest.js'
 import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './spaces.js'
 import { getToken, rotateToken, serverStatus } from './server.js'
@@ -117,6 +117,19 @@ export function registerIpc() {
     return { removed: items.length }
   })
   ipcMain.handle('items:revealInFinder', async (_e, item) => shell.showItemInFolder(item.path))
+
+  // Colour search needs a palette on every item, including ones imported
+  // before the field existed. Done on demand, with progress, rather than
+  // as a blocking migration at launch.
+  ipcMain.handle('items:backfillPalette', async (e, root) => {
+    const { items } = await loadIndex(root)
+    const pending = items.filter((i) => !i.colors || !i.colors.length)
+    for (const [n, item] of pending.entries()) {
+      await backfillPalette(item)
+      emit(e.sender, 'backfill:progress', { done: n + 1, total: pending.length })
+    }
+    return { updated: pending.length }
+  })
 
   // ---- spaces -------------------------------------------------------
 

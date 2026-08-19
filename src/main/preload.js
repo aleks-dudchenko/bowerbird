@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('zbirka', {
   restoreItems: (items) => ipcRenderer.invoke('items:restore', items),
   purgeItems: (items) => ipcRenderer.invoke('items:purge', items),
   revealInFinder: (item) => ipcRenderer.invoke('items:revealInFinder', item),
+  backfillPalette: (root) => ipcRenderer.invoke('items:backfillPalette', root),
 
   listSpaces: (root) => ipcRenderer.invoke('spaces:list', root),
   readSpace: (root, id) => ipcRenderer.invoke('spaces:read', root, id),

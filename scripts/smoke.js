@@ -14,7 +14,7 @@ import { promisify } from 'node:util'
 import sharp from 'sharp'
 import ffmpegPath from 'ffmpeg-static'
 import { ensureLibrary, loadIndex, thumbsDir, spacesDir } from '../src/main/library.js'
-import { ingestFile, updateSidecar, trashItem, restoreItem } from '../src/main/ingest.js'
+import { ingestFile, updateSidecar, trashItem, restoreItem, backfillPalette } from '../src/main/ingest.js'
 import { createSpace, writeSpace, readSpace, listSpaces, removeSpace, newNodeId } from '../src/main/spaces.js'
 
 const run = promisify(execFile)
@@ -78,7 +78,29 @@ app.whenReady().then(async () => {
   ok('tags persisted', idx.items.find((i) => i.id === clip.id).tags.join() === 'motion,loop')
   ok('note persisted', idx.items.find((i) => i.id === clip.id).note === 'test')
 
-  console.log('\n5. Spaces')
+  console.log('\n5. Palette and flags')
+  const red = added.find((a) => a.title === 'sample-1')
+  ok('a palette was extracted on import', red.colors.length > 0, `${red.colors.length} colours`)
+  ok('the dominant colour matches the fixture',
+    Math.abs(red.colors[0][0] - 220) < 40 && red.colors[0][1] < 140,
+    JSON.stringify(red.colors[0]))
+  ok('sidecars carry a schema version', added.every((a) => a.schema === 1))
+  ok('new items start unfavourited and uncollected',
+    added.every((a) => a.favourite === false && Array.isArray(a.collections)))
+
+  await updateSidecar(red, { favourite: true, collections: ['work'] })
+  idx = await loadIndex(ROOT)
+  const flagged = idx.items.find((i) => i.id === red.id)
+  ok('favourite persists', flagged.favourite === true)
+  ok('collection membership persists', flagged.collections.join() === 'work')
+
+  // Libraries built before the palette field existed must be able to
+  // catch up without a blocking migration at launch.
+  await updateSidecar(red, { colors: [] })
+  const refilled = await backfillPalette({ ...red, thumb: red.thumb })
+  ok('backfill recomputes a missing palette', refilled.colors.length > 0)
+
+  console.log('\n6. Spaces')
   let space = await createSpace(ROOT, 'Test board')
   space = await writeSpace(ROOT, {
     ...space,
@@ -97,7 +119,7 @@ app.whenReady().then(async () => {
   ok('list returns a summary, not full nodes',
     summary[0].nodeCount === 3 && summary[0].nodes === undefined)
 
-  console.log('\n6. Trash keeps the file on disk')
+  console.log('\n7. Trash keeps the file on disk')
   await trashItem(added[0])
   idx = await loadIndex(ROOT)
   ok('trashed item leaves the library', idx.items.length === added.length - 1)
@@ -107,7 +129,7 @@ app.whenReady().then(async () => {
   idx = await loadIndex(ROOT)
   ok('restore brings it back', idx.items.length === added.length)
 
-  console.log('\n7. Cache is rebuildable (the core architectural claim)')
+  console.log('\n8. Cache is rebuildable (the core architectural claim)')
   await rm(join(ROOT, '.zbirka'), { recursive: true, force: true })
   idx = await loadIndex(ROOT)
   const spacesAfter = await listSpaces(ROOT)

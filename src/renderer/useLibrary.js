@@ -102,8 +102,29 @@ export function useLibrary({ onToast } = {}) {
     [root, refresh, onToast]
   )
 
+  const restoreItems = useCallback(
+    async (list) => {
+      await api.restoreItems(list)
+      await refresh(root)
+      onToast?.(`Restored ${list.length}`)
+    },
+    [root, refresh, onToast]
+  )
+
+  // The only path that actually destroys anything, and it hands the files
+  // to the system trash rather than unlinking them.
+  const purgeItems = useCallback(
+    async (list) => {
+      await api.purgeItems(list)
+      await refresh(root)
+      onToast?.(`Moved ${list.length} to the system trash`)
+    },
+    [root, refresh, onToast]
+  )
+
   return {
     root, items, trashed, byId, loading, progress,
-    chooseLibrary, refresh, addPaths, addViaDialog, updateItem, trashItems,
+    chooseLibrary, refresh, addPaths, addViaDialog, updateItem,
+    trashItems, restoreItems, purgeItems,
   }
 }

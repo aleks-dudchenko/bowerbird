@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import ffmpegPath from 'ffmpeg-static'
 import { shell } from 'electron'
 import { itemsDir, thumbsDir, writeAtomic } from './library.js'
+import { extractPalette } from './palette.js'
 
 const run = promisify(execFile)
 
@@ -133,7 +134,12 @@ export async function ingestFile(root, srcPath, extra = {}) {
     }
   }
 
+  // The palette is read from the thumbnail rather than the original: it
+  // is already downscaled, and a 6000px source would dominate import.
+  const colors = await extractPalette(thumb).catch(() => [])
+
   const meta = {
+    schema: 1,
     id,
     file: `${id}${ext}`,
     kind,
@@ -145,6 +151,9 @@ export async function ingestFile(root, srcPath, extra = {}) {
     duration,
     tags: [],
     note: '',
+    colors,
+    favourite: false,
+    collections: [],
     sourceUrl: extra.sourceUrl || null,
     deletedAt: null,
   }
@@ -184,4 +193,13 @@ export async function purgeItem(item) {
     }
   }
   return true
+}
+
+
+// Existing libraries predate the palette field. Rather than a migration
+// step at launch, colours are filled in lazily on request with progress
+// reported to the window.
+export async function backfillPalette(item) {
+  const colors = await extractPalette(item.thumb).catch(() => [])
+  return updateSidecar(item, { colors, schema: 1 })
 }

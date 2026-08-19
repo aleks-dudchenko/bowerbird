@@ -77,12 +77,17 @@ user pastes once. Downloads happen in the main process, formats come from
 an explicit allowlist and images must actually decode before they are
 accepted. Fills `sourceUrl`, which has been in the sidecar since M1.
 
-**M4 — Search**
-Full-text over title, note and tags from an in-memory inverted index with a
-snapshot on disk — no SQLite unless a cold launch on a 50k-item library
-exceeds two seconds. Collections, colour search from stored palettes,
-keyboard navigation: `j/k` move, `t` tag, `b` collect, `f` favourite,
-`/` search.
+**M4 — Search** ✅
+Full-text over title, tags, note and OCR from an inverted index built in
+the renderer — no SQLite. Compound words are indexed whole and split, so
+`DarkModeDashboard` is findable by `dashboard`. Prefix matching means
+results appear while typing, tags outrank titles, and multiple terms are
+ANDed. Colour search from a five-colour palette extracted at import, with
+backfill for older libraries. Favourites, collections, a trash view that
+restores, and `j/k` `g/G` `f` `t` `/` keyboard navigation.
+
+No SQLite unless a cold launch on a 50k-item library exceeds two seconds —
+that is the trigger to revisit, not a hunch.
 
 **M5 — AI and formats**
 Local CLIP for semantic search. A single Swift helper covering Vision OCR,

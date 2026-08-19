@@ -519,3 +519,55 @@ button { font: inherit; }
 
 .token-row { display: flex; gap: 6px; }
 .token-row input { flex: 1; font-family: ui-monospace, Menlo, monospace; }
+
+/* ---------- search facets ---------- */
+
+.ghost.is-active { color: var(--text); border-color: var(--accent); }
+
+.swatches {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+.swatch:hover { transform: scale(1.12); }
+.swatch.is-active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+
+/* ---------- trash ---------- */
+
+.trash-tab {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.trash-tab:hover { color: var(--text); border-color: var(--faint); }
+
+.card.is-trashed { opacity: 0.55; position: relative; }
+.card.is-trashed:hover { opacity: 1; }
+
+.trash-actions {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  background: linear-gradient(transparent, rgba(14, 14, 17, 0.9));
+}

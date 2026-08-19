@@ -4,6 +4,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 import { registerIpc } from './ipc.js'
 import { readSettings, writeSettings, setAllowedRoot, isInsideLibrary } from './library.js'
 import { startServer, stopServer } from './server.js'
+import { buildMenu } from './menu.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -90,6 +91,19 @@ app.whenReady().then(async () => {
 
   registerIpc()
   createWindow(settings.windowBounds)
+
+  // Menu items talk to the renderer rather than duplicating logic in the
+  // main process — the window already knows how to open settings, pick a
+  // folder, or create a space.
+  const tell = (type) => () =>
+    win && !win.isDestroyed() && win.webContents.send('app:event', { type })
+
+  buildMenu({
+    onSettings: tell('menu:settings'),
+    onAddFiles: tell('menu:addFiles'),
+    onNewSpace: tell('menu:newSpace'),
+    onChooseLibrary: tell('menu:chooseLibrary'),
+  })
 
   // Saves arriving from the browser have to reach the open window, or the
   // grid silently lags behind what the user just clicked.

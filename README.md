@@ -4,11 +4,17 @@ A local design-reference library for macOS. Offline, no account, no
 subscription. Your files stay in an ordinary folder — the app does not
 take ownership of them.
 
-> **Status: M2 — boards work.** Drag-and-drop import, sidecars, thumbnails,
-> masonry grid, editable tags and notes, video poster frames, and an
-> infinite canvas whose layout is a plain JSON file in your library folder.
-> Real search is still to come; a substring filter and tag rail stand in.
+> **Status: M4 — search works.** Import by drag, by dialog or from the
+> browser; an infinite canvas whose layout is a plain JSON file; full-text
+> and colour search; favourites, collections and a recoverable trash.
 > Roadmap: [ROADMAP.md](ROADMAP.md).
+
+## Searching
+
+Type to search titles, tags, notes and any text found inside images.
+Prefixes match as you type and multiple words are ANDed. The colour strip
+filters by dominant colour. `/` focuses search, `j` and `k` walk results,
+`f` favourites, `t` jumps to tagging, `g` and `G` go to the ends.
 
 ## Principles
 

@@ -30,6 +30,13 @@ export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
     <aside className="detail">
       <div className="detail-head">
         <button className="ghost" onClick={onClose}>Close</button>
+        <button
+          className={`ghost ${item.favourite ? 'is-active' : ''}`}
+          title="Favourite (f)"
+          onClick={() => commit({ favourite: !item.favourite })}
+        >
+          ★
+        </button>
         <div className="spacer" />
         <button className="ghost" onClick={() => api.revealInFinder(item)}>Finder</button>
         <button className="danger" onClick={() => onTrash(item)}>Trash</button>
