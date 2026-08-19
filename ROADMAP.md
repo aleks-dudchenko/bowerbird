@@ -126,3 +126,29 @@ a free tool rather than a papered-over one.
 | PDF | sharp cannot decode it; QuickLook via the M5 helper covers PDF and HEIC in one path |
 | Electron bundle size | accepted cost of development speed; dropping ffmpeg took 43 MB off it |
 | Unsigned builds need `xattr -dr com.apple.quarantine` | document in README until an Apple Developer certificate exists |
+
+
+## What running the packaged build taught us
+
+Four defects survived every unit test and only appeared once the app was
+built and launched as a real bundle. All four shared a shape: a failure
+with nowhere to report itself.
+
+- **No sidecar migration.** Items imported before the `kind` field existed
+  carried `kind: null`, and every feature that branches on it skipped them
+  in silence. Libraries outlive the code that wrote them; there is now a
+  migration on load.
+- **`writeAtomic` raced with itself.** A fixed `${path}.tmp` meant two
+  concurrent writers shared one scratch file and the second `rename` threw
+  ENOENT. Settings are patched from four places at once, so this was
+  reachable in ordinary use.
+- **The save server failed to bind silently.** The status line said "not
+  listening" with no reason. Worse, the test slept and hoped rather than
+  checking it owned the port, and spent a debugging session talking to a
+  different running copy of the app.
+- **Background jobs did not refresh the UI.** OCR wrote text to disk and
+  the renderer never reloaded, so searching for a word plainly visible in
+  the picture returned nothing until a restart.
+
+The lesson worth keeping: a `catch {}` that swallows an error turns a bug
+into a mystery. Every one of these was found by making the failure speak.

@@ -4,8 +4,9 @@ A local design-reference library for macOS. Offline, no account, no
 subscription. Your files stay in an ordinary folder — the app does not
 take ownership of them.
 
-> **Status: feature-complete for a first release.** Everything on the
-> roadmap through M6 is done and tested. Roadmap: [ROADMAP.md](ROADMAP.md).
+> **Status: ready for a first release.** Everything on the roadmap through
+> M6 is built, tested and verified in a packaged build.
+> Roadmap: [ROADMAP.md](ROADMAP.md).
 
 ## What it does
 
