@@ -5,7 +5,7 @@ import Tray from '../components/Tray.jsx'
 const api = window.zbirka
 
 export default function SpacesView({
-  root, items, byId, space, spaces, onOpen, onCreate, onRemoveSpace, onRename,
+  items, byId, space, spaces, onOpen, onCreate, onRemoveSpace, onRename,
   onAddItems, onMove, onRemoveNodes, onBringToFront, onDropFiles, onFocusItem,
 }) {
   const [selectedNodeIds, setSelectedNodeIds] = useState(new Set())

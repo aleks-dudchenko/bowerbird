@@ -571,3 +571,23 @@ button { font: inherit; }
   padding: 8px;
   background: linear-gradient(transparent, rgba(14, 14, 17, 0.9));
 }
+
+/* ---------- local AI ---------- */
+
+.rule { border: none; border-top: 1px solid var(--line); margin: 20px 0 16px; }
+.button-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+.ai-progress {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Suggestions are visually distinct from tags a person typed, and one
+   click promotes them. A guess must never look like a decision. */
+.tag.is-suggested { border-style: dashed; color: var(--faint); }
+.tag.is-suggested:hover { color: var(--accent); border-color: var(--accent); }

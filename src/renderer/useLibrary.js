@@ -73,7 +73,7 @@ export function useLibrary({ onToast } = {}) {
   )
 
   const addViaDialog = useCallback(async () => {
-    const paths = await api.addFilesDialog(root)
+    const paths = await api.addFilesDialog()
     return paths ? addPaths(paths) : []
   }, [root, addPaths])
 

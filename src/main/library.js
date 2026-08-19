@@ -71,7 +71,7 @@ export function isInsideLibrary(path) {
 
 // Walks items/ recursively and returns every sidecar path.
 async function walkSidecars(dir, out = []) {
-  let entries = []
+  let entries
   try {
     entries = await readdir(dir, { withFileTypes: true })
   } catch {

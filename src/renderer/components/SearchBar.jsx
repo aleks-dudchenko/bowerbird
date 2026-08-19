@@ -13,9 +13,17 @@ const SearchBar = forwardRef(function SearchBar(
           ref={ref}
           className="search"
           value={s.query}
-          placeholder="Search titles, tags, notes  ( / )"
+          placeholder={s.semantic ? 'Describe what you remember  ( / )' : 'Search titles, tags, notes  ( / )'}
           onChange={(e) => s.setQuery(e.target.value)}
         />
+
+        <button
+          className={`ghost ${s.semantic ? 'is-active' : ''}`}
+          title="Describe an image instead of matching its words"
+          onClick={() => s.setSemantic(!s.semantic)}
+        >
+          {s.thinking ? '…' : 'AI'}
+        </button>
 
         <button
           className={`ghost ${s.favourite ? 'is-active' : ''}`}

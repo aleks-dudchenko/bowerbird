@@ -4,6 +4,13 @@
 // settings file — the server reads libraryRoot from there, and a test
 // that clobbered it would point the user's app at a temp folder.
 import { app } from 'electron'
+
+// Without this an async failure leaves Electron sitting on an error
+// dialog forever, which reads as a hung test rather than a broken one.
+process.on('unhandledRejection', (err) => {
+  console.error('\nunhandled rejection:', err)
+  app.exit(1)
+})
 import { rm, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'

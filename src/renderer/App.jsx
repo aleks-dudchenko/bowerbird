@@ -28,7 +28,7 @@ export default function App() {
 
   const lib = useLibrary({ onToast: showToast })
   const space = useSpace(lib.root)
-  const s = useSearch(lib.items)
+  const s = useSearch(lib.items, lib.root)
 
   useEffect(() => {
     api.getSettings(['mode']).then(({ mode: saved }) => saved && setMode(saved))
@@ -158,7 +158,6 @@ export default function App() {
         />
       ) : (
         <SpacesView
-          root={lib.root}
           items={lib.items}
           byId={lib.byId}
           space={space.space}
@@ -188,7 +187,13 @@ export default function App() {
         />
       )}
 
-      {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <Settings
+          onClose={() => setSettingsOpen(false)}
+          root={lib.root}
+          items={lib.items}
+        />
+      )}
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 

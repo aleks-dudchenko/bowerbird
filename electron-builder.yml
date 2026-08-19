@@ -1,0 +1,50 @@
+appId: one.zbirka.app
+productName: Zbirka
+copyright: Copyright © 2026 Aleks Dudchenko
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+  # onnxruntime-node ships binaries for every platform it supports —
+  # 124 MB of Windows and 52 MB of Linux that a macOS app can never load.
+  - "!**/node_modules/onnxruntime-node/bin/napi-v6/win32/**"
+  - "!**/node_modules/onnxruntime-node/bin/napi-v6/linux/**"
+  # The wasm build of sharp is a fallback for platforms without a native
+  # binary. There is a native one here.
+  - "!**/node_modules/@img/sharp-wasm32/**"
+  - "!**/node_modules/@img/sharp-libvips-dev/**"
+  - "!**/*.map"
+  - "!**/{test,__tests__,docs,example,examples}/**"
+
+# Native binaries cannot be executed from inside an asar archive. sharp
+# ships platform libraries, and zbirka-helper is a Mach-O executable — both
+# have to sit on the filesystem.
+asarUnpack:
+  - "**/node_modules/@img/**"
+  - "**/node_modules/sharp/**"
+
+extraResources:
+  - from: build/zbirka-helper
+    to: zbirka-helper
+
+mac:
+  category: public.app-category.graphics-design
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  # macOS 13 is the floor because the helper uses Vision revision 3 and
+  # AVAssetImageGenerator's async API.
+  minimumSystemVersion: "13.0"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+publish: null

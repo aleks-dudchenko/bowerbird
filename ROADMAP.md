@@ -89,24 +89,40 @@ restores, and `j/k` `g/G` `f` `t` `/` keyboard navigation.
 No SQLite unless a cold launch on a 50k-item library exceeds two seconds —
 that is the trigger to revisit, not a hunch.
 
-**M5 — AI and formats**
-Local CLIP for semantic search. A single Swift helper covering Vision OCR,
-AVFoundation poster frames and QuickLook thumbnails — which also removes
-the ffmpeg dependency entirely. HEIC and PDF. Zero-shot auto-tags, kept in
-their own field so they never overwrite what a human typed.
+**M5 — AI and formats** ✅
+A single Swift helper (`helper/main.swift`, 222 KB universal) covering
+Vision OCR, AVFoundation poster frames and QuickLook thumbnails. It
+**removed the ffmpeg dependency entirely** — the bundled binary reported
+"nonfree parts compiled in. Therefore it is not legally redistributable",
+which blocked any release. HEIC and PDF ride the same QuickLook path.
 
-**M6 — Release**
-GitHub Actions, electron-builder, contribution guide, issue templates,
-third-party licence notices.
+Vision reports 30 OCR languages on macOS 26, Ukrainian among them — the
+list is read from the OS rather than hard-coded.
+
+Local CLIP (`Xenova/clip-vit-base-patch32`) for search by description.
+Weights download on first use, never at install. Vectors live in
+`.zbirka/clip/` as cache, never in sidecars. Zero-shot tags land in
+`autoTags` and are promoted to real tags only by a click, so a guess never
+overwrites what a person typed.
+
+**M6 — Release** ✅
+electron-builder producing arm64 and x64 dmgs, GitHub Actions for CI and
+tagged releases, ESLint and Prettier, contribution guide, issue templates
+and third-party licence notices.
+
+Builds are **unsigned**: signing and notarisation need a paid Apple
+Developer account. Until there is one, the release notes carry the
+`xattr -dr com.apple.quarantine` instruction, which is an honest trade for
+a free tool rather than a papered-over one.
 
 ## Known risks
 
 | Risk | Mitigation |
 |---|---|
-| **`ffmpeg-static` is not redistributable** — the bundled binary reports "nonfree parts compiled in", and the package is GPL-3.0 | **Blocks any binary release.** Replaced by the Swift helper in M5; until then it is a local-development dependency only |
+| ~~`ffmpeg-static` is not redistributable~~ | **Resolved.** Removed in M5; AVFoundation does the work through the helper |
 | CLIP weights ~150 MB on first run | download on first AI action, not at install |
 | macOS Vision may not support `uk` | check `supportedRecognitionLanguages` at M4 and document the real list |
 | HEIC | resolved — the bundled libvips reports `heif` input support, so it is an extension-list change |
 | PDF | sharp cannot decode it; QuickLook via the M5 helper covers PDF and HEIC in one path |
-| Electron bundle size (~120 MB dmg) | accepted cost of development speed |
+| Electron bundle size | accepted cost of development speed; dropping ffmpeg took 43 MB off it |
 | Unsigned builds need `xattr -dr com.apple.quarantine` | document in README until an Apple Developer certificate exists |

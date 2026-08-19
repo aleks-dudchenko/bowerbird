@@ -7,6 +7,8 @@ import {
 } from './ingest.js'
 import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './spaces.js'
 import { getToken, rotateToken, serverStatus } from './server.js'
+import { indexLibrary, query as semanticQuery, autoTag, cancelIndexing } from './ai.js'
+import { runOcr } from './ingest.js'
 
 // One event envelope instead of a channel per notification. Import
 // progress was the only consumer; indexing, OCR and extension saves are
@@ -90,7 +92,7 @@ export function registerIpc() {
     return { added, skipped, duplicates }
   })
 
-  ipcMain.handle('items:addFilesDialog', async (e, root) => {
+  ipcMain.handle('items:addFilesDialog', async (e) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(
       BrowserWindow.fromWebContents(e.sender),
       {
@@ -143,4 +145,23 @@ export function registerIpc() {
 
   ipcMain.handle('server:status', async () => ({ ...serverStatus(), token: await getToken() }))
   ipcMain.handle('server:rotateToken', async () => ({ token: await rotateToken() }))
+
+  // ---- local AI --------------------------------------------------------
+
+  ipcMain.handle('ai:index', async (e, root) =>
+    indexLibrary(root, (p) => emit(e.sender, 'ai:progress', p))
+  )
+  ipcMain.handle('ai:cancel', async () => { cancelIndexing(); return true })
+  ipcMain.handle('ai:query', async (_e, root, text, k) => semanticQuery(root, text, k))
+  ipcMain.handle('ai:autoTag', async (e, root, items) =>
+    autoTag(root, items, (p) => emit(e.sender, 'ai:progress', p))
+  )
+  ipcMain.handle('ocr:run', async (e, items) => {
+    let done = 0
+    for (const item of items) {
+      try { await runOcr(item) } catch { /* unreadable image */ }
+      emit(e.sender, 'ai:progress', { phase: 'ocr', done: ++done, total: items.length })
+    }
+    return { done }
+  })
 }

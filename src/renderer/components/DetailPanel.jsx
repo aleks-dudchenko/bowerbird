@@ -92,6 +92,34 @@ export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
         />
       </label>
 
+      {(item.autoTags || []).length > 0 && (
+        <div className="field">
+          <span>Suggested</span>
+          <div className="tags">
+            {item.autoTags.map((t) => (
+              <button
+                key={t}
+                className="tag is-suggested"
+                title="Accept this suggestion"
+                onClick={() => commit({
+                  tags: [...new Set([...(item.tags || []), t])],
+                  autoTags: item.autoTags.filter((x) => x !== t),
+                })}
+              >
+                {t} <em>+</em>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {item.ocr && (
+        <label className="field">
+          <span>Text in image</span>
+          <textarea rows={3} readOnly value={item.ocr} />
+        </label>
+      )}
+
       <dl className="meta">
         <dt>Kind</dt>
         <dd>{item.kind === 'video' ? 'Video' : 'Image'}</dd>

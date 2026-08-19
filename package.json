@@ -1,6 +1,6 @@
 {
   "name": "zbirka",
-  "version": "0.0.1",
+  "version": "0.4.0",
   "description": "A local, offline design-reference library. Your files stay in a plain folder.",
   "license": "MIT",
   "author": "Aleks Dudchenko",
@@ -13,18 +13,29 @@
     "smoke": "electron scripts/smoke.js",
     "test": "node --test \"test/*.test.js\"",
     "test:server": "electron scripts/server.test.js",
-    "verify": "npm run build && npm test && npm run smoke && npm run test:server"
+    "verify": "npm run build && npm run lint && npm test && npm run smoke && npm run test:server",
+    "lint": "eslint .",
+    "test:clip": "electron scripts/clip.test.js",
+    "dist": "npm run build && electron-builder --mac"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "prettier": "^3.9.6",
     "vite": "^5.4.11"
   },
   "dependencies": {
-    "ffmpeg-static": "^5.3.0",
+    "@huggingface/transformers": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sharp": "^0.35.3"
+  },
+  "build": {
+    "extends": "./electron-builder.yml"
   }
 }

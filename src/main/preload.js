@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld('zbirka', {
   revealLibrary: (root) => ipcRenderer.invoke('library:reveal', root),
 
   addItems: (root, paths, opts) => ipcRenderer.invoke('items:add', root, paths, opts),
-  addFilesDialog: (root) => ipcRenderer.invoke('items:addFilesDialog', root),
+  addFilesDialog: () => ipcRenderer.invoke('items:addFilesDialog'),
   updateItem: (item, patch) => ipcRenderer.invoke('items:update', item, patch),
   trashItems: (items) => ipcRenderer.invoke('items:trash', items),
   restoreItems: (items) => ipcRenderer.invoke('items:restore', items),
@@ -29,6 +29,12 @@ contextBridge.exposeInMainWorld('zbirka', {
   writeSpace: (root, space) => ipcRenderer.invoke('spaces:write', root, space),
   createSpace: (root, name) => ipcRenderer.invoke('spaces:create', root, name),
   removeSpace: (root, id) => ipcRenderer.invoke('spaces:remove', root, id),
+
+  indexForAi: (root) => ipcRenderer.invoke('ai:index', root),
+  cancelAi: () => ipcRenderer.invoke('ai:cancel'),
+  semanticQuery: (root, text, k) => ipcRenderer.invoke('ai:query', root, text, k),
+  autoTag: (root, items) => ipcRenderer.invoke('ai:autoTag', root, items),
+  runOcr: (items) => ipcRenderer.invoke('ocr:run', items),
 
   serverStatus: () => ipcRenderer.invoke('server:status'),
   rotateToken: () => ipcRenderer.invoke('server:rotateToken'),

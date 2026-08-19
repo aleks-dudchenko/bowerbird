@@ -45,7 +45,7 @@ function normalise(space) {
 // The list view only needs a summary. Reading full node arrays for every
 // space would make opening the picker O(total nodes in the library).
 export async function listSpaces(root) {
-  let names = []
+  let names
   try {
     names = (await readdir(spacesDir(root))).filter((n) => n.endsWith('.json'))
   } catch {

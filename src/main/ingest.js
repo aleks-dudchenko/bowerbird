@@ -1,27 +1,29 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { copyFile, mkdir, readFile, access } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, access, unlink } from 'node:fs/promises'
 import { join, extname, basename } from 'node:path'
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import sharp from 'sharp'
-import ffmpegPath from 'ffmpeg-static'
 import { shell } from 'electron'
 import { itemsDir, thumbsDir, writeAtomic } from './library.js'
 import { extractPalette } from './palette.js'
-
-const run = promisify(execFile)
+import { videoPoster, quickLookThumb, recogniseText } from './helper.js'
 
 const IMAGE_EXT = new Set([
   '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.tif', '.tiff', '.svg',
 ])
 const VIDEO_EXT = new Set(['.mp4', '.mov', '.m4v', '.webm'])
+// sharp decodes HEIC but not PDF. Both go through QuickLook instead, so
+// there is a single code path for "the system already knows how to
+// preview this" rather than a second image library.
+const SYSTEM_EXT = new Set(['.heic', '.heif', '.pdf'])
 
 export const kindOf = (p) => {
   const ext = extname(p).toLowerCase()
-  if (IMAGE_EXT.has(ext)) return 'image'
+  if (IMAGE_EXT.has(ext) || SYSTEM_EXT.has(ext)) return 'image'
   if (VIDEO_EXT.has(ext)) return 'video'
   return null
 }
+
+export const needsSystemPreview = (p) => SYSTEM_EXT.has(extname(p).toLowerCase())
 
 export const isSupported = (p) => kindOf(p) !== null
 
@@ -39,33 +41,30 @@ async function imageThumb(src, dest) {
     .toFile(dest)
 }
 
-// ffmpeg writes "Duration: 00:01:23.45" to stderr. Cheaper than shipping
-// a second binary just to read one number.
-function parseDuration(stderr) {
-  const m = /Duration:\s*(\d+):(\d+):(\d+\.\d+)/.exec(stderr || '')
-  if (!m) return null
-  return +m[1] * 3600 + +m[2] * 60 + parseFloat(m[3])
+// Video frames used to come from a bundled ffmpeg whose binary declares
+// itself "not legally redistributable". AVFoundation does the same job
+// through the helper, with hardware decoding and no licence problem.
+async function videoThumb(src, dest) {
+  const tmp = `${dest}.jpg`
+  const { duration } = await videoPoster(src, tmp)
+  await sharp(tmp)
+    .resize(640, 640, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toFile(dest)
+  await unlink(tmp).catch(() => {})
+  return { duration }
 }
 
-// Poster frame at 1s — far enough in to skip fade-ins and black leaders,
-// early enough that clips shorter than a second still work via -ss 0.
-async function videoThumb(src, dest) {
-  let stderr = ''
-  for (const seek of ['00:00:01', '00:00:00']) {
-    try {
-      const res = await run(ffmpegPath, [
-        '-hide_banner', '-loglevel', 'info',
-        '-ss', seek, '-i', src,
-        '-frames:v', '1', '-vf', 'scale=640:-2:flags=lanczos',
-        '-f', 'webp', '-quality', '82', '-y', dest,
-      ])
-      stderr = res.stderr
-      return { duration: parseDuration(stderr) }
-    } catch (err) {
-      stderr = err.stderr || ''
-    }
-  }
-  throw new Error('ffmpeg could not extract a frame')
+// PDF and HEIC go through QuickLook, then get normalised to webp like
+// everything else so the renderer has one format to deal with.
+async function systemThumb(src, dest) {
+  const tmp = `${dest}.jpg`
+  await quickLookThumb(src, tmp, 640)
+  await sharp(tmp)
+    .resize(640, 640, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toFile(dest)
+  await unlink(tmp).catch(() => {})
 }
 
 // One file in: original into items/YYYY/MM/, sidecar beside it,
@@ -108,17 +107,28 @@ export async function ingestFile(root, srcPath, extra = {}) {
   let duration = null
 
   if (kind === 'image') {
-    try {
-      const meta = await sharp(dest).metadata()
-      width = meta.width ?? null
-      height = meta.height ?? null
-    } catch {
-      // SVG without intrinsic size, or a corrupt file — not fatal
-    }
-    try {
-      await imageThumb(dest, thumb)
-    } catch {
-      // no thumbnail — the renderer falls back to the original
+    if (needsSystemPreview(dest)) {
+      try {
+        await systemThumb(dest, thumb)
+        const meta = await sharp(thumb).metadata()
+        width = meta.width ?? null
+        height = meta.height ?? null
+      } catch {
+        // unpreviewable — it still enters the library, just without art
+      }
+    } else {
+      try {
+        const meta = await sharp(dest).metadata()
+        width = meta.width ?? null
+        height = meta.height ?? null
+      } catch {
+        // SVG without intrinsic size, or a corrupt file — not fatal
+      }
+      try {
+        await imageThumb(dest, thumb)
+      } catch {
+        // no thumbnail — the renderer falls back to the original
+      }
     }
   } else {
     try {
@@ -151,6 +161,9 @@ export async function ingestFile(root, srcPath, extra = {}) {
     duration,
     tags: [],
     note: '',
+    ocr: null,
+    ocrAt: null,
+    autoTags: [],
     colors,
     favourite: false,
     collections: [],
@@ -202,4 +215,12 @@ export async function purgeItem(item) {
 export async function backfillPalette(item) {
   const colors = await extractPalette(item.thumb).catch(() => [])
   return updateSidecar(item, { colors, schema: 1 })
+}
+
+
+// OCR is on demand rather than at import: it is the slowest thing the app
+// does, and most references are never searched by the text inside them.
+export async function runOcr(item) {
+  const { text } = await recogniseText(item.path)
+  return updateSidecar(item, { ocr: text || null, ocrAt: new Date().toISOString() })
 }

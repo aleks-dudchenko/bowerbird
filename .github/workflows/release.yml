@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: macos-14
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: make -C helper
+      - run: npm test
+
+      - name: Build the app
+        run: npx electron-builder --mac --publish never
+
+      # Builds are unsigned: signing and notarisation need a paid Apple
+      # Developer account. The release notes tell people how to open them.
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.dmg
+          body: |
+            Unsigned build. macOS will refuse it on first launch; to allow it:
+
+            ```
+            xattr -dr com.apple.quarantine /Applications/Zbirka.app
+            ```
+
+            Or build from source with `npm ci && make -C helper && npm run build`.

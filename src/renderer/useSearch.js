@@ -1,18 +1,45 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { buildIndex, search, applyFilters } from '../shared/search.js'
 
 // The index is built in the renderer because the items are already here:
 // shipping them to the main process to be indexed and back would cost
 // more than the indexing does. Rebuilds on every library change, which is
 // a few milliseconds for thousands of items.
-export function useSearch(items) {
+export function useSearch(items, root) {
   const [query, setQuery] = useState('')
   const [tags, setTags] = useState(new Set())
   const [collection, setCollection] = useState(null)
   const [favourite, setFavourite] = useState(false)
   const [colour, setColour] = useState(null)
+  const [semantic, setSemantic] = useState(false)
+  const [semanticIds, setSemanticIds] = useState(null)
+  const [thinking, setThinking] = useState(false)
 
   const index = useMemo(() => buildIndex(items), [items])
+
+  // Semantic search is a round trip to the model, so it is debounced and
+  // never runs on every keystroke the way the text index does.
+  useEffect(() => {
+    if (!semantic || !root || query.trim().length < 3) {
+      setSemanticIds(null)
+      return
+    }
+    let cancelled = false
+    setThinking(true)
+    const timer = setTimeout(async () => {
+      try {
+        const hits = await window.zbirka.semanticQuery(root, query.trim(), 60)
+        if (!cancelled) setSemanticIds(hits.map((h) => h.id))
+      } finally {
+        if (!cancelled) setThinking(false)
+      }
+    }, 350)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+      setThinking(false)
+    }
+  }, [semantic, query, root])
 
   const results = useMemo(() => {
     const filtered = applyFilters(items, {
@@ -21,7 +48,7 @@ export function useSearch(items) {
       favourite,
       colour,
     })
-    const ranked = search(index, query)
+    const ranked = semantic ? semanticIds : search(index, query)
     if (ranked === null) return filtered
 
     // Keep search ranking rather than library order — the whole point of
@@ -29,7 +56,7 @@ export function useSearch(items) {
     const allowed = new Set(filtered.map((i) => i.id))
     const byId = new Map(items.map((i) => [i.id, i]))
     return ranked.filter((id) => allowed.has(id)).map((id) => byId.get(id))
-  }, [items, index, query, tags, collection, favourite, colour])
+  }, [items, index, query, tags, collection, favourite, colour, semantic, semanticIds])
 
   const facets = useMemo(() => {
     const tagCounts = new Map()
@@ -74,6 +101,7 @@ export function useSearch(items) {
   return {
     query, setQuery, tags, toggleTag, collection, setCollection,
     favourite, setFavourite, colour, setColour,
+    semantic, setSemantic, thinking,
     results, facets, active, clear,
   }
 }

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    # macOS because the smoke and server suites run under Electron and the
+    # helper is a Mach-O binary built with swiftc.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the system helper
+        run: make -C helper
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Disk layer
+        run: npm run smoke
+
+      - name: Save server
+        run: npm run test:server

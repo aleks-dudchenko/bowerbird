@@ -1,0 +1,29 @@
+name: Bug report
+description: Something behaves differently from how it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead.
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Zbirka version
+      placeholder: "0.4.0, or a commit hash if you built from source"
+    validations: { required: true }
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "14.5"
+    validations: { required: true }
+  - type: textarea
+    id: library
+    attributes:
+      label: Library details
+      description: >
+        Roughly how many items, and is the library folder inside Dropbox,
+        iCloud or another synced location? Both matter more than they sound.

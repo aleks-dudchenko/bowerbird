@@ -6,18 +6,34 @@
 // fresh clone — an earlier version assumed files in /tmp and silently
 // lied about its own coverage everywhere else.
 import { app } from 'electron'
-import { rm, mkdir, readdir, readFile, stat } from 'node:fs/promises'
+
+// Without this an async failure leaves Electron sitting on an error
+// dialog forever, which reads as a hung test rather than a broken one.
+process.on('unhandledRejection', (err) => {
+  console.error('\nunhandled rejection:', err)
+  app.exit(1)
+})
+import { rm, mkdir, readdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
+import { copyFile } from 'node:fs/promises'
 import sharp from 'sharp'
-import ffmpegPath from 'ffmpeg-static'
-import { ensureLibrary, loadIndex, thumbsDir, spacesDir } from '../src/main/library.js'
-import { ingestFile, updateSidecar, trashItem, restoreItem, backfillPalette } from '../src/main/ingest.js'
+import { ensureLibrary, loadIndex, spacesDir } from '../src/main/library.js'
+import { ocrLanguages, helperPath } from '../src/main/helper.js'
+import { ingestFile, updateSidecar, trashItem, restoreItem, backfillPalette, runOcr } from '../src/main/ingest.js'
 import { createSpace, writeSpace, readSpace, listSpaces, removeSpace, newNodeId } from '../src/main/spaces.js'
 
-const run = promisify(execFile)
+// A minimal one-page PDF, written by hand so the test needs no library
+// to produce one.
+const PDF_BYTES = Buffer.from(
+  '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n' +
+  '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
+  '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Contents 4 0 R' +
+  '/Resources<</Font<</F1 5 0 R>>>>>>endobj\n' +
+  '4 0 obj<</Length 44>>stream\nBT /F1 24 Tf 20 100 Td (Zbirka) Tj ET\nendstream\nendobj\n' +
+  '5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\ntrailer<</Root 1 0 R>>'
+)
+
 const BASE = join(tmpdir(), `zbirka-smoke-${process.pid}`)
 const SRC = join(BASE, 'src')
 const ROOT = join(BASE, 'lib')
@@ -38,11 +54,13 @@ async function makeFixtures() {
       .png()
       .toFile(join(SRC, `sample-${i + 1}.png`))
   }
-  await run(ffmpegPath, [
-    '-hide_banner', '-loglevel', 'error',
-    '-f', 'lavfi', '-i', 'testsrc=size=640x360:rate=25',
-    '-t', '3', '-pix_fmt', 'yuv420p', '-y', join(SRC, 'clip.mp4'),
-  ])
+  // Images are generated, but the video is a committed fixture: the app
+  // no longer bundles an encoder, and requiring one just to run the tests
+  // would put the licence problem straight back.
+  await copyFile(
+    new URL('../test/fixtures/clip.mp4', import.meta.url).pathname,
+    join(SRC, 'clip.mp4')
+  )
 }
 
 app.whenReady().then(async () => {
@@ -63,8 +81,9 @@ app.whenReady().then(async () => {
 
   console.log('\n2. Video')
   ok('poster frame written', (await stat(clip.thumb)).size > 0)
-  ok('duration parsed', clip.duration > 2.5 && clip.duration < 3.5, `${clip.duration}s`)
-  ok('dimensions from poster', clip.width === 640 && clip.height === 360)
+  ok('duration read via AVFoundation', clip.duration > 2.5 && clip.duration < 3.5, `${clip.duration}s`)
+  ok('dimensions from poster', clip.width === 320 && clip.height === 180,
+    `${clip.width}x${clip.height}`)
 
   console.log('\n3. Index rebuilds from sidecars')
   let idx = await loadIndex(ROOT)
@@ -78,7 +97,32 @@ app.whenReady().then(async () => {
   ok('tags persisted', idx.items.find((i) => i.id === clip.id).tags.join() === 'motion,loop')
   ok('note persisted', idx.items.find((i) => i.id === clip.id).note === 'test')
 
-  console.log('\n5. Palette and flags')
+  console.log('\n5. System helper replaces ffmpeg')
+  ok('the helper binary is present', !!(await helperPath()))
+  const langs = await ocrLanguages()
+  ok('OCR languages come from the OS', langs.languages.length > 10, `${langs.languages.length}`)
+  ok('Ukrainian is among them', langs.languages.some((l) => l.startsWith('uk')))
+
+  // A PDF has no thumbnail path through sharp at all; QuickLook is the
+  // reason PDF and HEIC work without another image library.
+  const pdfPath = join(SRC, 'doc.pdf')
+  await writeFile(pdfPath, PDF_BYTES)
+  const pdfItem = await ingestFile(ROOT, pdfPath)
+  ok('a PDF imports', pdfItem.kind === 'image')
+  ok('the PDF got a thumbnail via QuickLook', (await stat(pdfItem.thumb)).size > 0)
+
+  const textPath = join(SRC, 'text.png')
+  await sharp(Buffer.from(
+    `<svg width="700" height="220" xmlns="http://www.w3.org/2000/svg">` +
+    `<rect width="700" height="220" fill="white"/>` +
+    `<text x="30" y="120" font-family="Helvetica" font-size="58" fill="black">Pricing plan</text></svg>`
+  )).png().toFile(textPath)
+  const textItem = await ingestFile(ROOT, textPath)
+  const recognised = await runOcr({ ...textItem })
+  ok('OCR reads text out of an image', /pricing/i.test(recognised.ocr || ''), JSON.stringify(recognised.ocr))
+  ok('the OCR timestamp is recorded', !!recognised.ocrAt)
+
+  console.log('\n6. Palette and flags')
   const red = added.find((a) => a.title === 'sample-1')
   ok('a palette was extracted on import', red.colors.length > 0, `${red.colors.length} colours`)
   ok('the dominant colour matches the fixture',
@@ -100,7 +144,8 @@ app.whenReady().then(async () => {
   const refilled = await backfillPalette({ ...red, thumb: red.thumb })
   ok('backfill recomputes a missing palette', refilled.colors.length > 0)
 
-  console.log('\n6. Spaces')
+  const total = (await loadIndex(ROOT)).items.length
+  console.log('\n7. Spaces')
   let space = await createSpace(ROOT, 'Test board')
   space = await writeSpace(ROOT, {
     ...space,
@@ -119,21 +164,21 @@ app.whenReady().then(async () => {
   ok('list returns a summary, not full nodes',
     summary[0].nodeCount === 3 && summary[0].nodes === undefined)
 
-  console.log('\n7. Trash keeps the file on disk')
+  console.log('\n8. Trash keeps the file on disk')
   await trashItem(added[0])
   idx = await loadIndex(ROOT)
-  ok('trashed item leaves the library', idx.items.length === added.length - 1)
+  ok('trashed item leaves the library', idx.items.length === total - 1, `${idx.items.length}`)
   ok('trashed item is listed separately', idx.trashed.length === 1)
   ok('the original file is untouched', (await stat(added[0].path)).size > 0)
   await restoreItem(added[0])
   idx = await loadIndex(ROOT)
-  ok('restore brings it back', idx.items.length === added.length)
+  ok('restore brings it back', idx.items.length === total)
 
-  console.log('\n8. Cache is rebuildable (the core architectural claim)')
+  console.log('\n9. Cache is rebuildable (the core architectural claim)')
   await rm(join(ROOT, '.zbirka'), { recursive: true, force: true })
   idx = await loadIndex(ROOT)
   const spacesAfter = await listSpaces(ROOT)
-  ok('all records survive deleting .zbirka/', idx.items.length === added.length)
+  ok('all records survive deleting .zbirka/', idx.items.length === total)
   ok('tags survive too', idx.items.find((i) => i.id === clip.id)?.tags.length === 2)
   ok('spaces survive — they are not cache', spacesAfter.length === 1 && spacesAfter[0].nodeCount === 3)
 
