@@ -1,0 +1,83 @@
+:root {
+  --bg: #0e0e11;
+  --surface: #16161b;
+  --line: #26262e;
+  --text: #e8e8ed;
+  --muted: #8b8b97;
+  --accent: #6f7bff;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: background 120ms ease;
+}
+
+.app.is-dragging { background: #12121a; }
+
+.titlebar {
+  height: 52px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 16px 0 84px; /* місце під світлофор macOS */
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+}
+
+.wordmark {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.empty {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.empty-inner {
+  max-width: 420px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 40px 32px;
+  background: var(--surface);
+  transition: border-color 120ms ease;
+}
+
+.is-dragging .empty-inner { border-color: var(--accent); }
+
+.empty h1 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.empty p {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.hint {
+  font-size: 11px;
+  color: #5a5a66;
+  font-variant-numeric: tabular-nums;
+}
