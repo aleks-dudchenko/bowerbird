@@ -42,18 +42,18 @@ export default function App() {
     const { added, skipped } = await api.addItems(root, paths)
     setProgress(null)
     if (added.length) await refresh(root)
-    if (skipped) console.warn(`пропущено файлів (формат): ${skipped}`)
+    if (skipped) console.warn(`skipped, unsupported format: ${skipped}`)
   }
 
-  // Escape знімає вибір — очікувана поведінка панелі деталей.
+  // Escape clears the selection — expected behaviour for a detail panel.
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && setSelected(null)
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Лічильник глибини: dragleave стріляє на кожному вкладеному елементі,
-  // без нього підсвітка блимає під час руху курсора над сіткою.
+  // Depth counter: dragleave fires for every nested element, and without
+  // it the highlight flickers as the cursor moves across the grid.
   const onDragEnter = (e) => {
     e.preventDefault()
     dragDepth.current += 1
@@ -109,7 +109,7 @@ export default function App() {
               </span>
             )}
             <button className="ghost" onClick={chooseLibrary}>
-              Змінити папку
+              Change folder
             </button>
           </>
         )}
@@ -118,22 +118,22 @@ export default function App() {
       {!root ? (
         <main className="empty">
           <div className="empty-inner">
-            <h1>Оберіть папку бібліотеки</h1>
+            <h1>Choose a library folder</h1>
             <p>
-              Файли зберігатимуться там звичайними файлами, поряд із кожним —
-              сайдкар із тегами. Папку можна покласти в Dropbox чи iCloud.
+              Files are stored there as plain files, each with a sidecar holding
+              its tags. Put the folder in Dropbox or iCloud if you want it synced.
             </p>
             <button className="primary" onClick={chooseLibrary}>
-              Обрати папку
+              Choose folder
             </button>
           </div>
         </main>
       ) : items.length === 0 ? (
         <main className="empty">
           <div className="empty-inner">
-            <h1>Бібліотека порожня</h1>
-            <p>Перетягни сюди зображення — вони скопіюються в папку бібліотеки.</p>
-            <span className="hint">PNG · JPG · WEBP · GIF · AVIF · TIFF · SVG</span>
+            <h1>Library is empty</h1>
+            <p>Drop images or video here — they are copied into the library folder.</p>
+            <span className="hint">PNG · JPG · WEBP · GIF · AVIF · TIFF · SVG · MP4 · MOV · WEBM</span>
           </div>
         </main>
       ) : (
@@ -149,7 +149,7 @@ export default function App() {
         />
       )}
 
-      {dragging && <div className="dropveil">Відпусти, щоб додати</div>}
+      {dragging && <div className="dropveil">Drop to add</div>}
     </div>
   )
 }

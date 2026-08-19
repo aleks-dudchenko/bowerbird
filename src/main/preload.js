@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
-// Єдиний міст рендерер↔система. Рендерер не має прямого доступу до node:
-// усе, що торкається диска, проходить через ці виклики.
+// The only bridge between renderer and system. The renderer has no
+// direct node access — everything touching disk goes through here.
 contextBridge.exposeInMainWorld('zbirka', {
-  // webUtils — єдиний спосіб дістати реальний шлях кинутого файлу
-  // в сучасному Electron: File.path прибрали з міркувань безпеки.
+  // webUtils is the only way to resolve a dropped file to a real path
+  // in current Electron — File.path was removed for security reasons.
   pathForFile: (file) => webUtils.getPathForFile(file),
 
   currentLibrary: () => ipcRenderer.invoke('library:current'),

@@ -5,9 +5,9 @@ import { registerIpc } from './ipc.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
-// Рендерер живе на http:// у деві, тож file:// для нього закритий.
-// Власна схема zb:// віддає файли з диска контрольовано — без
-// вимкнення webSecurity і без доступу до всієї файлової системи з JS.
+// The renderer runs on http:// in dev, so file:// is blocked for it.
+// A custom zb:// scheme serves disk files in a controlled way — without
+// disabling webSecurity and without exposing the filesystem to JS.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'zb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ])

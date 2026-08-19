@@ -8,8 +8,8 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
   const [note, setNote] = useState(item.note || '')
   const [tagDraft, setTagDraft] = useState('')
 
-  // Переключення на інший айтем має перезаряджати поля, а не лишати
-  // текст від попереднього.
+  // Switching to another item must reload the fields rather than keep
+  // the previous item's text.
   useEffect(() => {
     setTitle(item.title)
     setNote(item.note || '')
@@ -29,18 +29,22 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
   return (
     <aside className="detail">
       <div className="detail-head">
-        <button className="ghost" onClick={onClose}>Закрити</button>
+        <button className="ghost" onClick={onClose}>Close</button>
         <div className="spacer" />
         <button className="ghost" onClick={() => api.revealInFinder(item)}>Finder</button>
-        <button className="danger" onClick={() => onRemove(item)}>Видалити</button>
+        <button className="danger" onClick={() => onRemove(item)}>Delete</button>
       </div>
 
       <div className="detail-preview">
-        <img src={srcOf(item.path)} alt={item.title} />
+        {item.kind === 'video' ? (
+          <video src={srcOf(item.path)} controls preload="metadata" />
+        ) : (
+          <img src={srcOf(item.path)} alt={item.title} />
+        )}
       </div>
 
       <label className="field">
-        <span>Назва</span>
+        <span>Title</span>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -49,13 +53,13 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
       </label>
 
       <div className="field">
-        <span>Теги</span>
+        <span>Tags</span>
         <div className="tags">
           {(item.tags || []).map((t) => (
             <button
               key={t}
               className="tag"
-              title="Прибрати тег"
+              title="Remove tag"
               onClick={() => commit({ tags: item.tags.filter((x) => x !== t) })}
             >
               {t} <em>×</em>
@@ -66,13 +70,13 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
           <input
             value={tagDraft}
             onChange={(e) => setTagDraft(e.target.value)}
-            placeholder="Додати тег і Enter"
+            placeholder="Add a tag, press Enter"
           />
         </form>
       </div>
 
       <label className="field">
-        <span>Нотатка</span>
+        <span>Note</span>
         <textarea
           rows={4}
           value={note}
@@ -82,11 +86,19 @@ export default function DetailPanel({ item, onClose, onUpdate, onRemove }) {
       </label>
 
       <dl className="meta">
-        <dt>Розмір</dt>
+        <dt>Kind</dt>
+        <dd>{item.kind === 'video' ? 'Video' : 'Image'}</dd>
+        <dt>Size</dt>
         <dd>{item.width && item.height ? `${item.width} × ${item.height}` : '—'}</dd>
-        <dt>Додано</dt>
-        <dd>{new Date(item.addedAt).toLocaleDateString('uk-UA')}</dd>
-        <dt>Файл</dt>
+        {item.kind === 'video' && (
+          <>
+            <dt>Length</dt>
+            <dd>{item.duration ? `${Math.round(item.duration)}s` : '—'}</dd>
+          </>
+        )}
+        <dt>Added</dt>
+        <dd>{new Date(item.addedAt).toLocaleDateString('en-GB')}</dd>
+        <dt>File</dt>
         <dd className="mono">{item.file}</dd>
       </dl>
     </aside>

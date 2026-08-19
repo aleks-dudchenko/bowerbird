@@ -226,3 +226,31 @@ button { font: inherit; }
   font-weight: 500;
   pointer-events: none;
 }
+
+/* ---------- video ---------- */
+
+.card { position: relative; }
+
+.badge {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(14, 14, 17, 0.82);
+  backdrop-filter: blur(6px);
+  color: var(--text);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Video whose poster frame could not be extracted: keep the card a
+   sensible shape instead of collapsing to a broken image. */
+.card.is-noposter img { display: none; }
+.card.is-noposter { aspect-ratio: 16 / 9; background: var(--surface-2); }
+
+.detail-preview video { display: block; width: 100%; height: auto; }

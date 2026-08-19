@@ -2,14 +2,16 @@ import { app } from 'electron'
 import { mkdir, readFile, writeFile, readdir, stat } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 
-// Розкладка бібліотеки. Ключове рішення проєкту: папка — джерело правди.
+// Library layout. The core decision of this project: the folder is the
+// source of truth.
 //
 //   MyLibrary/
-//   ├─ items/2026/08/<id>.png     оригінал
-//   ├─ items/2026/08/<id>.json    сайдкар: теги, нотатки, джерело
-//   └─ .zbirka/thumbs/<id>.webp   кеш, завжди відновлюваний
+//   ├─ items/2026/08/<id>.png     original
+//   ├─ items/2026/08/<id>.json    sidecar: tags, note, source
+//   └─ .zbirka/thumbs/<id>.webp   cache, always rebuildable
 //
-// Усе в .zbirka/ можна видалити — індекс перебудується з сайдкарів.
+// Everything under .zbirka/ can be deleted — the index rebuilds from
+// the sidecars.
 
 const SETTINGS = () => join(app.getPath('userData'), 'settings.json')
 
@@ -38,7 +40,7 @@ export async function ensureLibrary(root) {
   return root
 }
 
-// Рекурсивний обхід items/ — повертає шляхи всіх сайдкарів.
+// Walks items/ recursively and returns every sidecar path.
 async function walkSidecars(dir, out = []) {
   let entries = []
   try {
@@ -54,9 +56,9 @@ async function walkSidecars(dir, out = []) {
   return out
 }
 
-// Індекс будується з сайдкарів на кожному старті. Повільніше за БД,
-// але доводить, що бібліотека самодостатня. SQLite додається в M2,
-// коли зʼявиться повнотекстовий пошук.
+// The index is rebuilt from sidecars on every launch. Slower than a
+// database, but it proves the library is self-contained. SQLite arrives
+// in M2, when full-text search needs it.
 export async function loadIndex(root) {
   const files = await walkSidecars(itemsDir(root))
   const items = []
@@ -64,10 +66,10 @@ export async function loadIndex(root) {
     try {
       const meta = JSON.parse(await readFile(f, 'utf8'))
       const file = join(dirname(f), meta.file)
-      await stat(file) // оригінал зник — пропускаємо запис
+      await stat(file) // original is gone — skip the record
       items.push({ ...meta, path: file, thumb: join(thumbsDir(root), `${meta.id}.webp`) })
     } catch {
-      // побитий сайдкар або відсутній оригінал — тихо пропускаємо
+      // broken sidecar or missing original — skip quietly
     }
   }
   items.sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''))

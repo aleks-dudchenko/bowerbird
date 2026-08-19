@@ -3,15 +3,15 @@ import { readSettings, writeSettings, ensureLibrary, loadIndex } from './library
 import { ingestFile, updateSidecar, removeItem, isSupported } from './ingest.js'
 
 export function registerIpc() {
-  // Поточна бібліотека або null, якщо ще не обрана.
+  // Current library root, or null if none has been chosen yet.
   ipcMain.handle('library:current', async () => (await readSettings()).libraryRoot ?? null)
 
   ipcMain.handle('library:choose', async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     const { canceled, filePaths } = await dialog.showOpenDialog(win, {
-      title: 'Оберіть папку бібліотеки',
+      title: 'Choose a library folder',
       properties: ['openDirectory', 'createDirectory'],
-      buttonLabel: 'Обрати',
+      buttonLabel: 'Choose',
     })
     if (canceled || !filePaths[0]) return null
     await ensureLibrary(filePaths[0])
@@ -23,7 +23,8 @@ export function registerIpc() {
 
   ipcMain.handle('library:reveal', async (_e, root) => shell.openPath(root))
 
-  // Імпорт із прогресом — рендерер малює лічильник, не чекаючи кінця.
+  // Import reports progress so the renderer can show a counter
+  // instead of freezing until the whole batch is done.
   ipcMain.handle('items:add', async (e, root, paths) => {
     const usable = paths.filter(isSupported)
     const added = []
@@ -32,7 +33,7 @@ export function registerIpc() {
         const item = await ingestFile(root, p)
         if (!item.skipped) added.push(item)
       } catch {
-        /* один битий файл не має зривати весь імпорт */
+        /* one bad file must not abort the whole import */
       }
       e.sender.send('items:progress', { done: i + 1, total: usable.length })
     }
