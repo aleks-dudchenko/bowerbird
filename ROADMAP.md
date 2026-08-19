@@ -70,9 +70,12 @@ nudging. Drop files straight onto the canvas to import and place in one
 gesture. A tray and tag rail stand in for search until it arrives. Trash
 that stamps `deletedAt` rather than deleting, with undo.
 
-**M3 — Browser extension**
-MV3 extension, "Save to Zbirka" context menu, loopback HTTP with a bearer
-token, server only alive while the app is running. Fills `sourceUrl`.
+**M3 — Browser extension** ✅
+MV3 extension with a "Save to Zbirka" context menu. The app listens on
+`127.0.0.1:47821` only while it is open, guarded by a bearer token the
+user pastes once. Downloads happen in the main process, formats come from
+an explicit allowlist and images must actually decode before they are
+accepted. Fills `sourceUrl`, which has been in the sidecar since M1.
 
 **M4 — Search**
 Full-text over title, note and tags from an in-memory inverted index with a

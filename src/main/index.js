@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { registerIpc } from './ipc.js'
 import { readSettings, writeSettings, setAllowedRoot, isInsideLibrary } from './library.js'
+import { startServer, stopServer } from './server.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -12,6 +13,18 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 protocol.registerSchemesAsPrivileged([
   { scheme: 'zb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ])
+
+// The save server binds a fixed port, so a second copy of the app would
+// fight the first for it. Hand the launch to the running window instead.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (!win) return
+    if (win.isMinimized()) win.restore()
+    win.focus()
+  })
+}
 
 let win = null
 
@@ -78,12 +91,21 @@ app.whenReady().then(async () => {
   registerIpc()
   createWindow(settings.windowBounds)
 
+  // Saves arriving from the browser have to reach the open window, or the
+  // grid silently lags behind what the user just clicked.
+  startServer((item) => {
+    if (win && !win.isDestroyed()) win.webContents.send('app:event', { type: 'item:saved', item })
+  })
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(settings.windowBounds)
   })
 })
 
-app.on('before-quit', persistBounds)
+app.on('before-quit', () => {
+  persistBounds()
+  stopServer()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

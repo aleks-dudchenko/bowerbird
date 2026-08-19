@@ -11,7 +11,9 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "smoke": "electron scripts/smoke.js",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "test:server": "electron scripts/server.test.js",
+    "verify": "npm run build && npm test && npm run smoke && npm run test:server"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

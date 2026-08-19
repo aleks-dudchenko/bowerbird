@@ -27,9 +27,20 @@ Video: MP4, MOV, M4V, WEBM — a poster frame is extracted on import
 
 ```
 npm install
-npm run dev     # start the app
-npm run smoke   # 24 checks against the disk layer, fixtures generated at runtime
+npm run dev      # start the app
+npm run verify   # build + unit tests + disk layer + save server
 ```
+
+### Browser extension
+
+Open **Settings** in the app and copy the connection token, then load
+`extension/` in Chrome via `chrome://extensions` → Developer mode →
+*Load unpacked*, open its options and paste the token. Right-click any
+image or video on a page and choose **Save to Zbirka**.
+
+The app listens on `127.0.0.1:47821` and only while it is running. The
+token is the only credential; rotating it in Settings revokes the old one
+immediately.
 
 ## Licence
 

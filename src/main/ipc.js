@@ -6,6 +6,7 @@ import {
   ingestFile, trashItem, restoreItem, purgeItem, updateSidecar, kindOf,
 } from './ingest.js'
 import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './spaces.js'
+import { getToken, rotateToken, serverStatus } from './server.js'
 
 // One event envelope instead of a channel per notification. Import
 // progress was the only consumer; indexing, OCR and extension saves are
@@ -124,4 +125,9 @@ export function registerIpc() {
   ipcMain.handle('spaces:write', async (_e, root, space) => writeSpace(root, space))
   ipcMain.handle('spaces:create', async (_e, root, name) => createSpace(root, name))
   ipcMain.handle('spaces:remove', async (_e, root, id) => removeSpace(root, id))
+
+  // ---- connection server ---------------------------------------------
+
+  ipcMain.handle('server:status', async () => ({ ...serverStatus(), token: await getToken() }))
+  ipcMain.handle('server:rotateToken', async () => ({ token: await rotateToken() }))
 }

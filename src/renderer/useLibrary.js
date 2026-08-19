@@ -34,6 +34,12 @@ export function useLibrary({ onToast } = {}) {
       if (e.type === 'import:progress') {
         setProgress(e.done < e.total ? { done: e.done, total: e.total } : null)
       }
+      // A save from the browser has to land in the open window, not wait
+      // for the next launch.
+      if (e.type === 'item:saved') {
+        api.currentLibrary().then((dir) => refresh(dir))
+        onToast?.(`Saved “${e.item.title}” from the browser`)
+      }
     })
   }, [refresh])
 

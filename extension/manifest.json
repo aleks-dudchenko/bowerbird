@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Save to Zbirka",
+  "version": "0.1.0",
+  "description": "Save images and video from any page into your local Zbirka library.",
+  "permissions": ["contextMenus", "storage", "notifications"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "background": { "service_worker": "background.js" },
+  "options_page": "options.html",
+  "icons": { "128": "icon.png" }
+}

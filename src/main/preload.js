@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld('zbirka', {
   createSpace: (root, name) => ipcRenderer.invoke('spaces:create', root, name),
   removeSpace: (root, id) => ipcRenderer.invoke('spaces:remove', root, id),
 
+  serverStatus: () => ipcRenderer.invoke('server:status'),
+  rotateToken: () => ipcRenderer.invoke('server:rotateToken'),
+
   onEvent: (cb) => {
     const handler = (_e, payload) => cb(payload)
     ipcRenderer.on('app:event', handler)

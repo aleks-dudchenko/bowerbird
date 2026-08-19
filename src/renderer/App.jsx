@@ -5,6 +5,7 @@ import { useDropTarget } from './useDropTarget.js'
 import TitleBar from './components/TitleBar.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import Toast from './components/Toast.jsx'
+import Settings from './components/Settings.jsx'
 import LibraryView from './views/LibraryView.jsx'
 import SpacesView from './views/SpacesView.jsx'
 
@@ -19,6 +20,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [query, setQuery] = useState('')
   const [activeTags, setActiveTags] = useState(new Set())
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const showToast = useCallback((message, action) => setToast({ message, action }), [])
 
@@ -107,6 +109,7 @@ export default function App() {
         progress={lib.progress}
         onChooseLibrary={lib.chooseLibrary}
         onAddFiles={lib.addViaDialog}
+        onSettings={() => setSettingsOpen(true)}
       />
 
       {mode === 'library' ? (
@@ -155,6 +158,8 @@ export default function App() {
           }}
         />
       )}
+
+      {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 

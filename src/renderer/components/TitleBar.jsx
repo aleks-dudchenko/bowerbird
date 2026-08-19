@@ -1,7 +1,7 @@
 const api = window.zbirka
 
 export default function TitleBar({
-  root, count, mode, onMode, progress, onChooseLibrary, onAddFiles,
+  root, count, mode, onMode, progress, onChooseLibrary, onAddFiles, onSettings,
 }) {
   return (
     <header className="titlebar">
@@ -38,6 +38,7 @@ export default function TitleBar({
           )}
           <button className="ghost" onClick={onAddFiles}>Add files…</button>
           <button className="ghost" onClick={onChooseLibrary}>Change folder</button>
+          <button className="ghost" onClick={onSettings}>Settings</button>
         </>
       )}
     </header>
