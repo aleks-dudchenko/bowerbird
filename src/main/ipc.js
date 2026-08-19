@@ -131,6 +131,7 @@ export function registerIpc() {
       await backfillPalette(item)
       emit(e.sender, 'backfill:progress', { done: n + 1, total: pending.length })
     }
+    emit(e.sender, 'library:changed')
     return { updated: pending.length }
   })
 
@@ -158,9 +159,11 @@ export function registerIpc() {
     searched: searchedPaths(),
   }))
   ipcMain.handle('ai:query', async (_e, root, text, k) => semanticQuery(root, text, k))
-  ipcMain.handle('ai:autoTag', async (e, root, items) =>
-    autoTag(root, items, (p) => emit(e.sender, 'ai:progress', p))
-  )
+  ipcMain.handle('ai:autoTag', async (e, root, items) => {
+    const result = await autoTag(root, items, (p) => emit(e.sender, 'ai:progress', p))
+    emit(e.sender, 'library:changed')
+    return result
+  })
   // Failures used to be swallowed here, which meant a missing helper
   // binary looked exactly like "there was no text to find". Report them.
   ipcMain.handle('ocr:run', async (e, items) => {
@@ -176,6 +179,9 @@ export function registerIpc() {
       }
       emit(e.sender, 'ai:progress', { phase: 'ocr', done: ++done, total: items.length })
     }
+    // Text read out of images is only searchable once the renderer has
+    // reloaded it; without this the result appears only after a restart.
+    emit(e.sender, 'library:changed')
     return { done, failed, error: lastError }
   })
 }

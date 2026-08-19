@@ -40,6 +40,11 @@ export function useLibrary({ onToast } = {}) {
         api.currentLibrary().then((dir) => refresh(dir))
         onToast?.(`Saved “${e.item.title}” from the browser`)
       }
+      // Batch jobs in the main process rewrite sidecars directly, so the
+      // renderer has to reload or the work is invisible until a restart.
+      if (e.type === 'library:changed') {
+        api.currentLibrary().then((dir) => refresh(dir))
+      }
     })
   }, [refresh])
 

@@ -146,6 +146,7 @@ export default function App() {
         <LibraryView
           root={lib.root}
           s={s}
+          total={lib.items.length}
           selectedIds={selectedIds}
           onSelect={setSelectedIds}
           onChooseLibrary={lib.chooseLibrary}

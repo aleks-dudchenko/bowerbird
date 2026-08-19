@@ -3,7 +3,7 @@ import Grid from '../components/Grid.jsx'
 import FilterRail from '../components/FilterRail.jsx'
 
 export default function LibraryView({
-  root, s, selectedIds, onSelect, onChooseLibrary, onAddFiles,
+  root, s, total, selectedIds, onSelect, onChooseLibrary, onAddFiles,
   onAddToSpace, hasSpace, searchRef, trashCount, onOpenTrash,
 }) {
   if (!root) {
@@ -27,7 +27,7 @@ export default function LibraryView({
         ref={searchRef}
         s={s}
         count={s.results.length}
-        total={s.facets.tags.length ? undefined : undefined}
+        total={total}
         selectionSize={selectedIds.size}
         hasSpace={hasSpace}
         onAddToSpace={onAddToSpace}

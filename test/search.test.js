@@ -113,3 +113,23 @@ test('colour tolerance widens the net', () => {
 test('an item with no palette never matches a colour query', () => {
   assert.ok(!matchesColour({ id: 'x' }, [0, 0, 0], 999))
 })
+
+test('text read out of an image is searchable like any other field', () => {
+  // The end-to-end failure this pins: OCR wrote text to disk, the
+  // renderer never reloaded, and searching for a word plainly visible in
+  // the picture returned nothing until the app was restarted.
+  const items = [
+    { id: 'chart', title: 'Screenshot 2026-08-19', tags: [], ocr: 'blockchain B swap blockchain A' },
+    { id: 'other', title: 'Poster', tags: ['print'] },
+  ]
+  assert.deepEqual(search(buildIndex(items), 'blockchain'), ['chart'])
+  assert.deepEqual(search(buildIndex(items), 'swap'), ['chart'])
+})
+
+test('OCR text ranks below tags, so a tagged item still wins', () => {
+  const items = [
+    { id: 'tagged', title: 'a', tags: ['poster'] },
+    { id: 'scanned', title: 'b', tags: [], ocr: 'poster' },
+  ]
+  assert.deepEqual(search(buildIndex(items), 'poster'), ['tagged', 'scanned'])
+})
