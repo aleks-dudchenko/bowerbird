@@ -17,6 +17,15 @@ import Foundation
 import QuickLookThumbnailing
 import Vision
 
+/// A reference box so an async Task can hand a value back across a
+/// semaphore. Capturing and mutating a local `var` inside a Task compiles
+/// on some toolchains and is rejected as unsafe concurrency on others —
+/// which is exactly how this first reached CI.
+final class Box<T>: @unchecked Sendable {
+    var value: T
+    init(_ value: T) { self.value = value }
+}
+
 func emit(_ object: [String: Any]) {
     let data = try! JSONSerialization.data(withJSONObject: object)
     FileHandle.standardOutput.write(data)
@@ -52,25 +61,26 @@ func poster(input: String, output: String) {
     generator.requestedTimeToleranceAfter = CMTime(seconds: 2, preferredTimescale: 600)
 
     let semaphore = DispatchSemaphore(value: 0)
-    var duration: Double = 0
-    var failure: String?
+    let result = Box<(duration: Double, failure: String?)>((0, nil))
 
     Task {
         do {
-            duration = try await CMTimeGetSeconds(asset.load(.duration))
+            let seconds = try await CMTimeGetSeconds(asset.load(.duration))
             // One second in skips fade-ins and black leaders; clips
             // shorter than that fall back to the first frame.
-            let at = CMTime(seconds: duration > 1.2 ? 1.0 : 0.0, preferredTimescale: 600)
+            let at = CMTime(seconds: seconds > 1.2 ? 1.0 : 0.0, preferredTimescale: 600)
             let (image, _) = try await generator.image(at: at)
             try writeJPEG(image, to: output)
+            result.value = (seconds, nil)
         } catch {
-            failure = error.localizedDescription
+            result.value = (0, error.localizedDescription)
         }
         semaphore.signal()
     }
     semaphore.wait()
 
-    if let failure { fail(failure) }
+    if let failure = result.value.failure { fail(failure) }
+    let duration = result.value.duration
     emit(["ok": true, "duration": duration.isFinite ? duration : 0])
 }
 
@@ -85,19 +95,19 @@ func thumbnail(input: String, output: String, size: Int) {
     )
 
     let semaphore = DispatchSemaphore(value: 0)
-    var failure: String?
+    let failure = Box<String?>(nil)
 
     QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { rep, error in
         if let rep {
-            do { try writeJPEG(rep.cgImage, to: output) } catch { failure = "\(error)" }
+            do { try writeJPEG(rep.cgImage, to: output) } catch { failure.value = "\(error)" }
         } else {
-            failure = error?.localizedDescription ?? "no representation"
+            failure.value = error?.localizedDescription ?? "no representation"
         }
         semaphore.signal()
     }
     semaphore.wait()
 
-    if let failure { fail(failure) }
+    if let message = failure.value { fail(message) }
     emit(["ok": true])
 }
 
@@ -113,9 +123,7 @@ func ocr(input: String) {
     request.usesLanguageCorrection = true
     // Ask for what the OS actually supports rather than hard-coding a
     // list that silently degrades on a different macOS version.
-    if let supported = try? VNRecognizeTextRequest.supportedRecognitionLanguages(
-        for: .accurate, revision: VNRecognizeTextRequestRevision3
-    ) {
+    if let supported = try? request.supportedRecognitionLanguages() {
         request.recognitionLanguages = supported
     }
 
@@ -133,9 +141,9 @@ func ocr(input: String) {
 }
 
 func languages() {
-    let list = (try? VNRecognizeTextRequest.supportedRecognitionLanguages(
-        for: .accurate, revision: VNRecognizeTextRequestRevision3
-    )) ?? []
+    let request = VNRecognizeTextRequest()
+    request.recognitionLevel = .accurate
+    let list = (try? request.supportedRecognitionLanguages()) ?? []
     emit(["ok": true, "languages": list])
 }
 
