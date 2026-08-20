@@ -121,7 +121,7 @@ export async function ensureLibrary(root) {
   return root
 }
 
-// The zb:// protocol handler would otherwise serve any absolute path on
+// The bb:// protocol handler would otherwise serve any absolute path on
 // disk to the renderer. It is only ever asked for files inside the
 // library, so confine it there and keep the current root in memory
 // rather than re-reading settings on every image request.

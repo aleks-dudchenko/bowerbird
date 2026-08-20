@@ -9,7 +9,7 @@ import { buildMenu } from './menu.js'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 // The renderer runs on http:// in dev, so file:// is blocked for it.
-// A custom zb:// scheme serves disk files in a controlled way — without
+// A custom bb:// scheme serves disk files in a controlled way — without
 // disabling webSecurity and without exposing the filesystem to JS.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'bb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
