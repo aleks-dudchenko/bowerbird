@@ -46,6 +46,10 @@ function createWindow(bounds) {
     minHeight: 600,
     show: false,
     titleBarStyle: 'hiddenInset',
+    // hiddenInset positions the window buttons for a standard toolbar,
+    // which sits higher than this one. Left alone they read as floating
+    // above the controls next to them instead of on the same line.
+    trafficLightPosition: { x: 20, y: 19 },
     backgroundColor: backgroundFor(),
     webPreferences: {
       preload: join(__dirname, '../preload/preload.mjs'),

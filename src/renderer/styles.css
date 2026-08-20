@@ -42,6 +42,11 @@
   --badge-bg: rgba(255, 255, 255, 0.86);
   --swatch-edge: rgba(0, 0, 0, 0.16);
   --primary-hover: #000000;
+
+  /* A tooltip has to clear whatever it lands on, so it carries its own
+     ground rather than borrowing the surface underneath. */
+  --tip-bg: #1c1c22;
+  --tip-text: #f6f6f8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,6 +69,8 @@
     --badge-bg: rgba(14, 14, 17, 0.82);
     --swatch-edge: rgba(255, 255, 255, 0.14);
     --primary-hover: #ffffff;
+    --tip-bg: #2c2c35;
+    --tip-text: #ececf1;
   }
 }
 
@@ -86,10 +93,15 @@
   --badge-bg: rgba(14, 14, 17, 0.82);
   --swatch-edge: rgba(255, 255, 255, 0.14);
   --primary-hover: #ffffff;
+  --tip-bg: #2c2c35;
+  --tip-text: #ececf1;
 }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
+/* The shell owns every scroll region it has. A tooltip is absolutely
+   positioned but still counts toward its scroll container's overflow, so
+   without this one wide hover label grows a document-wide scrollbar. */
+html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 
 body {
   background: var(--bg);
@@ -176,6 +188,61 @@ button { font: inherit; }
   cursor: pointer;
 }
 .ghost:hover { color: var(--text); border-color: var(--faint); }
+
+/* ---------- icon buttons and their tooltips ---------- */
+
+/* Words are kept for anything destructive or rare — "Delete space" is
+   not a shape anyone should have to recognise. Icons are for the
+   actions used often enough to become muscle memory. */
+
+.icon { display: block; flex: none; }
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.icon-btn:hover { color: var(--text); background: var(--surface-2); border-color: var(--line); }
+.icon-btn.is-active { color: var(--text); background: var(--surface-2); border-color: var(--emphasis); }
+.icon-btn.is-danger:hover { color: var(--danger); border-color: var(--danger); background: none; }
+
+/* An icon with no hover text is a guessing game. The delay is long
+   enough that sweeping a cursor across the toolbar stays quiet, and the
+   tooltip leaves on pointer-down so it never covers what it described. */
+[data-tip] { position: relative; }
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--tip-bg);
+  color: var(--tip-text);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 90ms ease;
+}
+
+[data-tip][data-tip-align='right']::after { left: auto; right: 0; transform: none; }
+[data-tip][data-tip-align='left']::after { left: 0; right: auto; transform: none; }
+[data-tip][data-tip-above]::after { top: auto; bottom: calc(100% + 7px); }
+
+[data-tip]:hover::after { opacity: 1; transition-delay: 320ms; }
+[data-tip]:active::after { opacity: 0; transition-delay: 0s; }
 
 .primary {
   background: var(--text);
@@ -657,6 +724,28 @@ button { font: inherit; }
 /* ---------- local AI ---------- */
 
 .rule { border: none; border-top: 1px solid var(--line); margin: 20px 0 16px; }
+
+.row { display: flex; align-items: center; gap: 12px; }
+
+/* A native range input paints its own blue on macOS, which is the one
+   hue this interface does not allow. */
+.slider {
+  flex: 1;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--text);
+  border: none;
+}
+.slider:disabled { cursor: default; opacity: 0.4; }
 .button-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 
 .ai-progress {

@@ -16,6 +16,9 @@ and dynamically loaded; you may replace it with your own build.
 
 **React**, **React DOM** — MIT. https://github.com/facebook/react
 
+**cuelume** — MIT. https://github.com/Danilaa1/cuelume
+Interaction sounds, synthesized at runtime; no audio files are bundled.
+
 **@huggingface/transformers** — Apache-2.0.
 https://github.com/huggingface/transformers.js
 

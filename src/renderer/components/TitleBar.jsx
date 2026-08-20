@@ -1,3 +1,5 @@
+import { IconButton } from './Icon.jsx'
+
 const api = window.bowerbird
 
 export default function TitleBar({
@@ -22,7 +24,11 @@ export default function TitleBar({
             </button>
           </div>
 
-          <button className="path" onClick={() => api.revealLibrary(root)} title={root}>
+          <button
+            className="path"
+            onClick={() => api.revealLibrary(root)}
+            data-tip="Show this folder in Finder"
+          >
             {root.split('/').pop()}
           </button>
           <span className="count">{count}</span>
@@ -34,9 +40,9 @@ export default function TitleBar({
               {progress.done} / {progress.total}
             </span>
           )}
-          <button className="ghost" onClick={onAddFiles}>Add files…</button>
-          <button className="ghost" onClick={onChooseLibrary}>Change folder</button>
-          <button className="ghost" onClick={onSettings}>Settings</button>
+          <IconButton icon="plus" tip="Add files" onClick={onAddFiles} />
+          <IconButton icon="folder" tip="Change library folder" onClick={onChooseLibrary} />
+          <IconButton icon="gear" tip="Settings" align="right" onClick={onSettings} />
         </>
       )}
     </header>

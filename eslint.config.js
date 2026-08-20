@@ -14,7 +14,12 @@ export default [
       globals: {
         chrome: 'readonly', document: 'readonly', fetch: 'readonly',
         setTimeout: 'readonly', setInterval: 'readonly',
+        window: 'readonly', location: 'readonly', XMLHttpRequest: 'readonly',
       },
+    },
+    rules: {
+      'no-unused-vars': ['error', { args: 'none' }],
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
   {

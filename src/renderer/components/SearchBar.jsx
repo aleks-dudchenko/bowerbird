@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { IconButton } from './Icon.jsx'
 
 const rgb = (c) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 
@@ -19,19 +20,20 @@ const SearchBar = forwardRef(function SearchBar(
 
         <button
           className={`ghost ${s.semantic ? 'is-active' : ''}`}
-          title="Describe an image instead of matching its words"
+          data-tip="Describe an image instead of matching its words"
+          data-tip-align="right"
           onClick={() => s.setSemantic(!s.semantic)}
         >
           {s.thinking ? '…' : 'AI'}
         </button>
 
-        <button
-          className={`ghost ${s.favourite ? 'is-active' : ''}`}
-          title="Favourites only"
+        <IconButton
+          icon="star"
+          tip="Favourites only"
+          filled={s.favourite}
+          className={s.favourite ? 'is-active' : ''}
           onClick={() => s.setFavourite(!s.favourite)}
-        >
-          ★
-        </button>
+        />
 
         {s.facets.collections.length > 0 && (
           <select
@@ -47,7 +49,7 @@ const SearchBar = forwardRef(function SearchBar(
         )}
 
         {s.active && (
-          <button className="ghost" onClick={s.clear}>
+          <button className="ghost" data-tip="Clear every filter" onClick={s.clear}>
             Clear · {count}/{total}
           </button>
         )}
@@ -68,7 +70,7 @@ const SearchBar = forwardRef(function SearchBar(
                 key={c.join()}
                 className={`swatch ${on ? 'is-active' : ''}`}
                 style={{ background: rgb(c) }}
-                title={`Colour ${rgb(c)}`}
+                data-tip={`Colour ${rgb(c)}`}
                 onClick={() => s.setColour(on ? null : c)}
               />
             )

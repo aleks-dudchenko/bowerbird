@@ -14,13 +14,14 @@ process.on('unhandledRejection', (err) => {
 import { rm, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { createServer } from 'node:http'
 import sharp from 'sharp'
 
 const BASE = join(tmpdir(), `bowerbird-server-${process.pid}`)
 app.setPath('userData', join(BASE, 'userData'))
 
 const { ensureLibrary, writeSettings, loadIndex } = await import('../src/main/library.js')
-const { startServer, stopServer, getToken, rotateToken, whenListening, PORT } =
+const { startServer, stopServer, getToken, rotateToken, whenListening, resolveSource, PORT } =
   await import('../src/main/server.js')
 
 const ROOT = join(BASE, 'lib')
@@ -141,7 +142,68 @@ app.whenReady().then(async () => {
     !fromPage.headers.get('access-control-allow-origin'),
     String(fromPage.headers.get('access-control-allow-origin')))
 
-  console.log('\n6. Rotation')
+  console.log('\n6. Saving from X')
+
+  // A stand-in for video.twimg.com, where one variant is gone and the
+  // next is not. Losing a save to a single dead URL is the failure this
+  // exists to prevent.
+  const origin = createServer((req, res) => {
+    if (req.url === '/small.png') {
+      res.writeHead(200, { 'Content-Type': 'image/png' })
+      res.end(png)
+    } else {
+      res.writeHead(404)
+      res.end()
+    }
+  })
+  await new Promise((done) => origin.listen(0, '127.0.0.1', done))
+  const at = (path) => `http://127.0.0.1:${origin.address().port}${path}`
+
+  const upgraded = await resolveSource({
+    url: 'https://pbs.twimg.com/media/GxK9?format=jpg&name=small',
+  })
+  ok('an X image is upgraded, keeping the rendered size as a fallback',
+    upgraded.length === 2 && upgraded[0].endsWith('name=orig'), upgraded.join(' , '))
+
+  const plain = await resolveSource({ url: 'https://example.com/a.png' })
+  ok('a URL from anywhere else is passed through untouched',
+    plain.length === 1 && plain[0] === 'https://example.com/a.png', plain.join(' , '))
+
+  let streamed = null
+  await resolveSource({ url: 'blob:https://x.com/9f1', pageUrl: 'https://x.com/home' })
+    .catch((err) => { streamed = err.message })
+  ok('a blob: video with no post behind it explains itself',
+    /streamed/.test(streamed || ''), String(streamed))
+
+  const fallback = await post({
+    variants: [
+      { bitrate: 900, content_type: 'video/mp4', url: at('/gone.mp4') },
+      { bitrate: 100, content_type: 'video/mp4', url: at('/small.png') },
+    ],
+    pageUrl: 'https://x.com/jane/status/1899',
+    title: 'A post worth keeping',
+  }, token)
+  ok('a dead variant falls through to the next one', fallback.status === 200, `got ${fallback.status}`)
+
+  const { items: afterX } = await loadIndex(ROOT)
+  const fromX = afterX.find((i) => i.title === 'A post worth keeping')
+  ok('the post\u2019s own words become the title', !!fromX)
+  ok('the post, not the media file, is recorded as the source',
+    fromX?.sourceUrl === 'https://x.com/jane/status/1899', fromX?.sourceUrl)
+
+  const allDead = await post(
+    { variants: [{ content_type: 'video/mp4', url: at('/gone.mp4') }] },
+    token
+  )
+  ok('when every variant is dead the failure is reported as upstream',
+    allDead.status === 502, `got ${allDead.status}`)
+
+  const nothing = await post({ url: 'blob:https://x.com/9f1' }, token)
+  ok('an unresolvable save is a 422, not a 500', nothing.status === 422, `got ${nothing.status}`)
+
+  origin.close()
+
+  console.log('\n7. Rotation')
   const fresh = await rotateToken()
   ok('rotation produces a different token', fresh !== token)
   const stale = await post({ url: dataUrl }, token)

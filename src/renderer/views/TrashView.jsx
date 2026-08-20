@@ -1,4 +1,5 @@
 import { srcOf } from '../components/Grid.jsx'
+import { IconButton } from '../components/Icon.jsx'
 
 // Deleting a designer's file with one click is the most damaging thing a
 // tool like this can do, so nothing is destroyed until it is asked for
@@ -30,7 +31,12 @@ export default function TrashView({ items, onRestore, onPurge, onBack }) {
             <div key={item.id} className="card is-trashed">
               <img src={srcOf(item.thumb)} alt={item.title} loading="lazy" />
               <div className="trash-actions">
-                <button className="ghost" onClick={() => onRestore([item])}>Restore</button>
+                <IconButton
+                  icon="restore"
+                  tip="Put this back in the library"
+                  align="right"
+                  onClick={() => onRestore([item])}
+                />
               </div>
             </div>
           ))}

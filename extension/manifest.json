@@ -1,15 +1,42 @@
 {
   "manifest_version": 3,
   "name": "Save to Bowerbird",
-  "version": "0.2.0",
-  "description": "Right-click any image or video and save it into your local Bowerbird library. Talks only to the app on your own machine.",
+  "version": "0.3.0",
+  "description": "Right-click any image or video and save it into your local Bowerbird library, X posts included. Talks only to the app on your own machine.",
   "permissions": [
     "contextMenus",
     "storage",
     "notifications"
   ],
   "host_permissions": [
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "x-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "x.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
   ],
   "background": {
     "service_worker": "background.js"

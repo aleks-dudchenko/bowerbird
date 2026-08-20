@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import { IconButton } from './Icon.jsx'
 
 const api = window.bowerbird
 
 // The token is the only thing standing between a web page and the
 // library, so it is shown deliberately — revealed on request, never
 // pre-filled into a visible field, and rotatable in one click.
-export default function Settings({ onClose, root, items, theme }) {
+export default function Settings({ onClose, root, items, theme, sound }) {
   const [status, setStatus] = useState(null)
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -54,7 +55,7 @@ export default function Settings({ onClose, root, items, theme }) {
         <div className="detail-head">
           <strong>Appearance</strong>
           <div className="spacer" />
-          <button className="ghost" onClick={onClose}>Close</button>
+          <IconButton icon="close" tip="Close (esc)" align="right" onClick={onClose} />
         </div>
 
         <p className="muted">
@@ -76,6 +77,37 @@ export default function Settings({ onClose, root, items, theme }) {
               {label}
             </button>
           ))}
+        </div>
+
+        <hr className="rule" />
+
+        <div className="detail-head">
+          <strong>Sound</strong>
+        </div>
+
+        <p className="muted">
+          Short synthesised cues on clicks and toggles — nothing on hover,
+          because a pointer crossing a toolbar is not an action.
+        </p>
+
+        <div className="row">
+          <button
+            className={`ghost ${sound?.on ? 'is-active' : ''}`}
+            onClick={() => sound?.choose(!sound.on)}
+          >
+            {sound?.on ? 'On' : 'Off'}
+          </button>
+          <input
+            className="slider"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={sound?.volume ?? 0.4}
+            disabled={!sound?.on}
+            onChange={(e) => sound?.level(Number(e.target.value))}
+          />
+          <span className="count">{Math.round((sound?.volume ?? 0) * 100)}%</span>
         </div>
 
         <hr className="rule" />

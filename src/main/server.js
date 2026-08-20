@@ -7,11 +7,21 @@ import sharp from 'sharp'
 import { net } from 'electron'
 import { readSettings, writeSettings } from './library.js'
 import { ingestFile, kindOf } from './ingest.js'
+import {
+  orderedVariants,
+  mediaFromSyndication,
+  pickFromMedia,
+  syndicationUrl,
+  tweetIdFrom,
+  upgradeMediaUrl,
+} from '../shared/x.js'
 
 // A fixed port, because the extension has no way to discover a random
 // one. 47821 is outside the registered range and unlikely to collide.
 export const PORT = 47821
-const MAX_BYTES = 64 * 1024 * 1024
+// Video is the reason this is not a tidier number: a minute of X video
+// at full bitrate clears what used to be the whole limit.
+const MAX_BYTES = 192 * 1024 * 1024
 
 let server = null
 let bound = false
@@ -138,6 +148,11 @@ async function fetchImage(url, pageUrl) {
     err.upstream = true
     throw err
   }
+  // Checking only after arrayBuffer() resolves is checking too late:
+  // the process has already allocated whatever the server chose to send.
+  const declared = Number(res.headers.get('content-length'))
+  if (declared > MAX_BYTES) throw new Error('file too large')
+
   const buffer = Buffer.from(await res.arrayBuffer())
   if (buffer.length > MAX_BYTES) throw new Error('file too large')
 
@@ -154,6 +169,50 @@ async function fetchImage(url, pageUrl) {
 // Saves used to be titled after the temp file they arrived in —
 // "bowerbird-1787217222181", which tells the user nothing. Use the image's
 // own filename, then the page it came from.
+/** GETs JSON with the app's network stack, so no CORS applies. */
+async function fetchJson(url) {
+  const res = await net.fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } })
+  if (!res.ok) {
+    const err = new Error(`the source refused the download (${res.status})`)
+    err.upstream = true
+    throw err
+  }
+  return res.json()
+}
+
+/**
+ * Turns whatever the extension managed to observe into an ordered list
+ * of URLs to try. More than one, because upgrading an X image to its
+ * original is a guess about a URL shape — a good guess, but the
+ * un-upgraded URL is known to work and belongs behind it.
+ */
+export async function resolveSource({ url, variants, tweetId, pageUrl }) {
+  const fromVariants = variants ? orderedVariants(variants) : []
+  if (fromVariants.length) return fromVariants
+
+  // A blob: URL is the <video> element's own src. It exists only inside
+  // the tab that created it, so fetching it from here cannot work; say
+  // that rather than emit a puzzling network error.
+  const streamed = typeof url === 'string' && url.startsWith('blob:')
+
+  if (url && !streamed) {
+    const upgraded = upgradeMediaUrl(url)
+    return upgraded === url ? [url] : [upgraded, url]
+  }
+
+  const id = tweetId ?? tweetIdFrom(pageUrl)
+  if (!id) {
+    throw new Error(
+      streamed
+        ? 'that video is streamed, and the page did not say where the file is'
+        : 'nothing to save here'
+    )
+  }
+  const picked = pickFromMedia(mediaFromSyndication(await fetchJson(syndicationUrl(id))))
+  if (!picked) throw new Error('X returned no media for that post')
+  return [picked]
+}
+
 export function titleFor(url, pageUrl) {
   try {
     if (!url.startsWith('data:')) {
@@ -221,17 +280,35 @@ export function startServer(onSaved) {
 
     let tmp = null
     try {
-      const { url, pageUrl } = JSON.parse(await readBody(req))
-      if (!url) return send(res, 400, { error: 'missing url' }, origin)
+      const payload = JSON.parse(await readBody(req))
+      const { pageUrl } = payload
+      if (!payload.url && !payload.variants && !payload.tweetId) {
+        return send(res, 400, { error: 'missing url' }, origin)
+      }
+
+      let candidates
+      try {
+        candidates = await resolveSource(payload)
+      } catch (err) {
+        return send(res, err.upstream ? 502 : 422, { error: err.message }, origin)
+      }
 
       let buffer
       let ext
-      try {
-        ;({ buffer, ext } = await fetchImage(url, pageUrl))
-      } catch (err) {
+      let failure = null
+      for (const candidate of candidates) {
+        try {
+          ;({ buffer, ext } = await fetchImage(candidate, pageUrl))
+          failure = null
+          break
+        } catch (err) {
+          failure = err
+        }
+      }
+      if (failure) {
         // A refusal from the far end is not "unsupported format" — saying
         // so sent people looking in entirely the wrong place.
-        return send(res, err.upstream ? 502 : 415, { error: err.message }, origin)
+        return send(res, failure.upstream ? 502 : 415, { error: failure.message }, origin)
       }
 
       tmp = join(tmpdir(), `bowerbird-${Date.now()}${ext}`)
@@ -249,8 +326,8 @@ export function startServer(onSaved) {
       }
 
       const item = await ingestFile(libraryRoot, tmp, {
-        sourceUrl: pageUrl || url,
-        title: titleFor(url, pageUrl),
+        sourceUrl: pageUrl || candidates[0],
+        title: payload.title?.slice(0, 120) || titleFor(candidates[0], pageUrl),
       })
       onSaved?.(item)
       send(res, 200, { ok: true, id: item.id, title: item.title }, origin)

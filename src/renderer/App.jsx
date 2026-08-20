@@ -4,6 +4,7 @@ import { useSpace } from './useSpace.js'
 import { useDropTarget } from './useDropTarget.js'
 import { useSearch } from './useSearch.js'
 import { useTheme } from './useTheme.js'
+import { useSound } from './useSound.js'
 import { useGridKeys } from './useGridKeys.js'
 import TitleBar from './components/TitleBar.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
@@ -31,6 +32,7 @@ export default function App() {
   const space = useSpace(lib.root)
   const s = useSearch(lib.items, lib.root)
   const theme = useTheme()
+  const sound = useSound()
 
   useEffect(() => {
     api.getSettings(['mode']).then(({ mode: saved }) => saved && setMode(saved))
@@ -48,8 +50,12 @@ export default function App() {
           space.create('Untitled')
           setMode('spaces')
         }
+        // The two moments no click can stand in for: something arrived
+        // from the browser, and a batch of imports finished.
+        if (e.type === 'item:saved') sound.cue('success')
+        if (e.type === 'import:progress' && e.done >= e.total) sound.cue('ready')
       }),
-    [lib, space]
+    [lib, space, sound.cue]
   )
 
   const changeMode = useCallback((next) => {
@@ -196,6 +202,7 @@ export default function App() {
           root={lib.root}
           items={lib.items}
           theme={theme}
+          sound={sound}
         />
       )}
 

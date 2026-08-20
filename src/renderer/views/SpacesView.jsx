@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Canvas from '../components/Canvas.jsx'
 import Tray from '../components/Tray.jsx'
+import { IconButton } from '../components/Icon.jsx'
 
 const api = window.bowerbird
 
@@ -114,7 +115,7 @@ export default function SpacesView({
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
-        <button className="ghost" onClick={() => onCreate('Untitled')}>New</button>
+        <IconButton icon="plus" tip="New space" onClick={() => onCreate('Untitled')} />
         <button className="danger" onClick={() => onRemoveSpace(space.id)}>Delete space</button>
       </div>
 

@@ -96,6 +96,33 @@ otherwise.
 
 Right-click any image or video on a page → **Save to Bowerbird**.
 
+#### X (Twitter)
+
+Three things make X a special case, and the extension handles all three.
+
+Timeline images are downscaled by a `name=` query parameter, so the URL
+under your cursor is a thumbnail — the app rewrites it to the original and
+keeps the rendered size as a fallback in case that guess is wrong.
+
+Video is played through MediaSource, so the `<video>` element's `src` is a
+`blob:` URL that exists only inside that tab. Nothing outside it can fetch
+that. The real files are separate MP4 variants named only in the JSON X's
+own client fetches, so a content script reads them out of that traffic and
+hands the list over; the app takes the largest that downloads.
+
+X's player is a stack of `div`s, so a right-click usually lands on the page
+rather than on the video. On x.com the menu item therefore also appears on
+the page background — right-click anywhere in the post.
+
+If the content script missed the post (a tab that was already open when the
+extension loaded), the app falls back to X's public embed endpoint using
+the post id. A post that quotes a video post resolves to the quoted video,
+which is the thing on screen.
+
+Videos that exist only as HLS are not saved: turning a playlist of segments
+into a file needs a muxer, and shipping one would mean shipping ffmpeg,
+which cannot be redistributed under this licence.
+
 The app listens on `127.0.0.1:47821`, only while it is running. Pairing
 only answers while you have opened a two-minute window from inside the
 app, only to a caller whose origin is an extension — a web page cannot

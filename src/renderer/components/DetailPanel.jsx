@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { srcOf } from './Grid.jsx'
+import { IconButton } from './Icon.jsx'
 
 const api = window.bowerbird
 
@@ -29,17 +30,23 @@ export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
   return (
     <aside className="detail">
       <div className="detail-head">
-        <button className="ghost" onClick={onClose}>Close</button>
-        <button
-          className={`ghost ${item.favourite ? 'is-active' : ''}`}
-          title="Favourite (f)"
+        <IconButton icon="close" tip="Close (esc)" align="left" onClick={onClose} />
+        <IconButton
+          icon="star"
+          tip="Favourite (f)"
+          filled={item.favourite}
+          className={item.favourite ? 'is-active' : ''}
           onClick={() => commit({ favourite: !item.favourite })}
-        >
-          ★
-        </button>
+        />
         <div className="spacer" />
-        <button className="ghost" onClick={() => api.revealInFinder(item)}>Finder</button>
-        <button className="danger" onClick={() => onTrash(item)}>Trash</button>
+        <IconButton icon="reveal" tip="Show in Finder" onClick={() => api.revealInFinder(item)} />
+        <IconButton
+          icon="trash"
+          tip="Move to trash"
+          align="right"
+          className="is-danger"
+          onClick={() => onTrash(item)}
+        />
       </div>
 
       <div className="detail-preview">
@@ -66,7 +73,7 @@ export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
             <button
               key={t}
               className="tag"
-              title="Remove tag"
+              data-tip="Remove tag"
               onClick={() => commit({ tags: item.tags.filter((x) => x !== t) })}
             >
               {t} <em>×</em>
@@ -100,7 +107,7 @@ export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
               <button
                 key={t}
                 className="tag is-suggested"
-                title="Accept this suggestion"
+                data-tip="Accept this suggestion"
                 onClick={() => commit({
                   tags: [...new Set([...(item.tags || []), t])],
                   autoTags: item.autoTags.filter((x) => x !== t),
