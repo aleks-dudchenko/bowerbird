@@ -1,5 +1,5 @@
-appId: one.zbirka.app
-productName: Zbirka
+appId: one.bowerbird.app
+productName: Bowerbird
 copyright: Copyright © 2026 Aleks Dudchenko
 
 directories:
@@ -21,15 +21,15 @@ files:
   - "!**/{test,__tests__,docs,example,examples}/**"
 
 # Native binaries cannot be executed from inside an asar archive. sharp
-# ships platform libraries, and zbirka-helper is a Mach-O executable — both
+# ships platform libraries, and bowerbird-helper is a Mach-O executable — both
 # have to sit on the filesystem.
 asarUnpack:
   - "**/node_modules/@img/**"
   - "**/node_modules/sharp/**"
 
 extraResources:
-  - from: build/zbirka-helper
-    to: zbirka-helper
+  - from: build/bowerbird-helper
+    to: bowerbird-helper
   # The extension is loaded unpacked from disk, so it has to exist on disk
   # after installing the app — not only in the source checkout.
   - from: extension

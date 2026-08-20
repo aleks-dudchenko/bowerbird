@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 
-const api = window.zbirka
+const api = window.bowerbird
 
 // dragleave fires for every nested element, so a boolean flickers as the
 // cursor crosses children. Counting enter/leave pairs is the fix.

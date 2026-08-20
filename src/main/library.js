@@ -10,11 +10,11 @@ import { migration } from '../shared/migrate.js'
 //   ├─ items/2026/08/<id>.png     original
 //   ├─ items/2026/08/<id>.json    sidecar: tags, note, source
 //   ├─ spaces/<id>.json           authored boards — NOT a cache
-//   └─ .zbirka/                   rebuildable cache only
+//   └─ .bowerbird/                   rebuildable cache only
 //      ├─ thumbs/<id>.webp
 //      └─ previews/<id>.webp
 //
-// Everything under .zbirka/ can be deleted — the index rebuilds from
+// Everything under .bowerbird/ can be deleted — the index rebuilds from
 // the sidecars and spaces survive untouched.
 
 const SETTINGS = () => join(app.getPath('userData'), 'settings.json')
@@ -40,9 +40,9 @@ export function writeSettings(patch) {
 
 export const itemsDir = (root) => join(root, 'items')
 export const spacesDir = (root) => join(root, 'spaces')
-export const cacheDir = (root) => join(root, '.zbirka')
-export const thumbsDir = (root) => join(root, '.zbirka', 'thumbs')
-export const previewsDir = (root) => join(root, '.zbirka', 'previews')
+export const cacheDir = (root) => join(root, '.bowerbird')
+export const thumbsDir = (root) => join(root, '.bowerbird', 'thumbs')
+export const previewsDir = (root) => join(root, '.bowerbird', 'previews')
 
 // One promise chain per path, so concurrent writers to the same file
 // queue instead of racing.
@@ -77,6 +77,21 @@ export async function writeAtomic(path, contents) {
 }
 
 export async function ensureLibrary(root) {
+  // The cache folder was called .zbirka before the project was renamed.
+  // It is only a cache, so losing it would cost nothing but regenerated
+  // thumbnails — but leaving it behind would litter the user's library
+  // with a folder under a dead name forever.
+  try {
+    await stat(join(root, '.zbirka'))
+    try {
+      await stat(cacheDir(root))
+    } catch {
+      await rename(join(root, '.zbirka'), cacheDir(root))
+    }
+  } catch {
+    /* nothing to carry over */
+  }
+
   for (const d of [itemsDir(root), spacesDir(root), thumbsDir(root), previewsDir(root)]) {
     await mkdir(d, { recursive: true })
   }

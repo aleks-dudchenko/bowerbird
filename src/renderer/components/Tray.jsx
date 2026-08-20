@@ -28,7 +28,7 @@ export default function Tray({ items, query, onQuery, onAdd, collapsed, onToggle
               title={item.title}
               draggable
               onDragStart={(e) => {
-                e.dataTransfer.setData('application/x-zbirka-item', item.id)
+                e.dataTransfer.setData('application/x-bowerbird-item', item.id)
                 e.dataTransfer.effectAllowed = 'copy'
               }}
               onDoubleClick={() => onAdd([item])}

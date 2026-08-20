@@ -8,7 +8,7 @@ follows from.
 
 **1. The library folder is the source of truth.**
 Every item is a file with a `.json` sidecar beside it. Every board is a
-file in `spaces/`. Everything under `.zbirka/` is a cache that can be
+file in `spaces/`. Everything under `.bowerbird/` is a cache that can be
 deleted at any moment and rebuilt from what remains. `npm run smoke`
 asserts this literally: it deletes the cache mid-run and checks that no
 record, tag or board was lost. A change that puts authored data in the

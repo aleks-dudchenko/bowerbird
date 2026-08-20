@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { srcOf } from './Grid.jsx'
 
-const api = window.zbirka
+const api = window.bowerbird
 
 export default function DetailPanel({ item, onClose, onUpdate, onTrash }) {
   const [title, setTitle] = useState(item.title)

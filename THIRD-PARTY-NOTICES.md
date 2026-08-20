@@ -1,6 +1,6 @@
 # Third-party notices
 
-Zbirka is MIT licensed. It bundles or depends on the following, whose own
+Bowerbird is MIT licensed. It bundles or depends on the following, whose own
 licences apply to those parts.
 
 ## Bundled in distributed builds
@@ -42,6 +42,6 @@ electron-vite, Vite, electron-builder, ESLint, Prettier — all MIT.
 
 ## System frameworks
 
-`zbirka-helper` links Apple's AVFoundation, Vision, QuickLookThumbnailing
+`bowerbird-helper` links Apple's AVFoundation, Vision, QuickLookThumbnailing
 and CoreImage, which ship with macOS and are used under the Apple SDK
 licence.

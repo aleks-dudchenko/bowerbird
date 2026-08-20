@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const api = window.zbirka
+const api = window.bowerbird
 
 // The token is the only thing standing between a web page and the
 // library, so it is shown deliberately — revealed on request, never
@@ -58,7 +58,7 @@ export default function Settings({ onClose, root, items }) {
         </div>
 
         <p className="muted">
-          Zbirka listens on <code>127.0.0.1</code> only while the app is open.
+          Bowerbird listens on <code>127.0.0.1</code> only while the app is open.
           Works in any Chromium browser — Comet, Chrome, Brave, Edge, Arc.
           Open its extensions page, turn on developer mode, load the folder
           below unpacked, then paste this token into the extension's options.

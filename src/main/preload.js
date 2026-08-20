@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 // The only bridge between renderer and system. The renderer has no
 // direct node access — everything touching disk goes through here.
-contextBridge.exposeInMainWorld('zbirka', {
+contextBridge.exposeInMainWorld('bowerbird', {
   // webUtils is the only way to resolve a dropped file to a real path
   // in current Electron — File.path was removed for security reasons.
   pathForFile: (file) => webUtils.getPathForFile(file),

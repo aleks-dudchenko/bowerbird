@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { freeSpot } from '../shared/canvas-math.js'
 
-const api = window.zbirka
+const api = window.bowerbird
 const COMMIT_DELAY = 600
 
 const newNodeId = () => `n${crypto.randomUUID().replace(/-/g, '').slice(0, 11)}`

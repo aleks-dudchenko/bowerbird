@@ -12,7 +12,7 @@ process.on('unhandledRejection', (err) => {
   app.exit(1)
 })
 
-const BASE = join(tmpdir(), `zbirka-clip-${process.pid}`)
+const BASE = join(tmpdir(), `bowerbird-clip-${process.pid}`)
 app.setPath('userData', join(BASE, 'userData'))
 
 const { embedImage, embedText, DIMS } = await import('../src/main/clip.js')

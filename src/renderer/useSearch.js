@@ -28,7 +28,7 @@ export function useSearch(items, root) {
     setThinking(true)
     const timer = setTimeout(async () => {
       try {
-        const hits = await window.zbirka.semanticQuery(root, query.trim(), 60)
+        const hits = await window.bowerbird.semanticQuery(root, query.trim(), 60)
         if (!cancelled) setSemanticIds(hits.map((h) => h.id))
       } finally {
         if (!cancelled) setThinking(false)

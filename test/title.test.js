@@ -31,7 +31,7 @@ test('underscores and dashes become spaces', () => {
 })
 
 test('a purely numeric filename is not a useful title', () => {
-  // Saves used to be named after the temp file, e.g. zbirka-1787217222181.
+  // Saves used to be named after the temp file, e.g. bowerbird-1787217222181.
   assert.equal(titleFor('https://picsum.photos/id/1015/800/600', 'https://picsum.photos/images'),
     'images — picsum.photos')
 })

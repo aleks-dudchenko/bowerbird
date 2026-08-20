@@ -10,15 +10,15 @@ function show(message, kind) {
 // a window for it — otherwise anything installed here could ask for the
 // token unprompted.
 document.getElementById('pair').addEventListener('click', async () => {
-  show('Asking Zbirka…')
+  show('Asking Bowerbird…')
   try {
     const res = await fetch(`${ENDPOINT}/pair`, { method: 'POST' })
     const body = await res.json().catch(() => ({}))
     if (!res.ok) return show(body.error || `Pairing refused (${res.status})`, 'err')
     await chrome.storage.local.set({ token: body.token })
-    show('Connected. Right-click any image and choose Save to Zbirka.', 'ok')
+    show('Connected. Right-click any image and choose Save to Bowerbird.', 'ok')
   } catch {
-    show('Zbirka is not running. Start the app and try again.', 'err')
+    show('Bowerbird is not running. Start the app and try again.', 'err')
   }
 })
 

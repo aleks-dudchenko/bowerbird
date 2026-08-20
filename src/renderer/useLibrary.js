@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-const api = window.zbirka
+const api = window.bowerbird
 
 // Owns the library: which folder, what is in it, and every mutation.
 // Extracted from App.jsx so both the grid and the canvas can read the

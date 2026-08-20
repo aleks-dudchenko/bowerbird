@@ -1,4 +1,4 @@
-// zbirka-helper — the parts of the app that macOS already does better
+// bowerbird-helper — the parts of the app that macOS already does better
 // than a bundled binary would.
 //
 // This exists to replace ffmpeg-static, whose prebuilt binary reports
@@ -32,7 +32,7 @@ func writeJPEG(_ cgImage: CGImage, to path: String) throws {
     let ci = CIImage(cgImage: cgImage)
     let context = CIContext()
     guard let colorSpace = cgImage.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB) else {
-        throw NSError(domain: "zbirka", code: 2)
+        throw NSError(domain: "bowerbird", code: 2)
     }
     try context.writeJPEGRepresentation(
         of: ci,
@@ -142,7 +142,7 @@ func languages() {
 // MARK: - entry
 
 let args = CommandLine.arguments
-guard args.count >= 2 else { fail("usage: zbirka-helper <poster|thumbnail|ocr|languages> …") }
+guard args.count >= 2 else { fail("usage: bowerbird-helper <poster|thumbnail|ocr|languages> …") }
 
 switch args[1] {
 case "poster":

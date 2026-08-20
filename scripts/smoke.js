@@ -30,11 +30,11 @@ const PDF_BYTES = Buffer.from(
   '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
   '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Contents 4 0 R' +
   '/Resources<</Font<</F1 5 0 R>>>>>>endobj\n' +
-  '4 0 obj<</Length 44>>stream\nBT /F1 24 Tf 20 100 Td (Zbirka) Tj ET\nendstream\nendobj\n' +
+  '4 0 obj<</Length 44>>stream\nBT /F1 24 Tf 20 100 Td (Bowerbird) Tj ET\nendstream\nendobj\n' +
   '5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\ntrailer<</Root 1 0 R>>'
 )
 
-const BASE = join(tmpdir(), `zbirka-smoke-${process.pid}`)
+const BASE = join(tmpdir(), `bowerbird-smoke-${process.pid}`)
 const SRC = join(BASE, 'src')
 const ROOT = join(BASE, 'lib')
 
@@ -198,10 +198,10 @@ app.whenReady().then(async () => {
   ok('restore brings it back', idx.items.length === total)
 
   console.log('\n10. Cache is rebuildable (the core architectural claim)')
-  await rm(join(ROOT, '.zbirka'), { recursive: true, force: true })
+  await rm(join(ROOT, '.bowerbird'), { recursive: true, force: true })
   idx = await loadIndex(ROOT)
   const spacesAfter = await listSpaces(ROOT)
-  ok('all records survive deleting .zbirka/', idx.items.length === total)
+  ok('all records survive deleting .bowerbird/', idx.items.length === total)
   ok('tags survive too', idx.items.find((i) => i.id === clip.id)?.tags.length === 2)
   ok('spaces survive — they are not cache', spacesAfter.length === 1 && spacesAfter[0].nodeCount === 3)
 

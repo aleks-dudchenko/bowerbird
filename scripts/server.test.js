@@ -16,7 +16,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import sharp from 'sharp'
 
-const BASE = join(tmpdir(), `zbirka-server-${process.pid}`)
+const BASE = join(tmpdir(), `bowerbird-server-${process.pid}`)
 app.setPath('userData', join(BASE, 'userData'))
 
 const { ensureLibrary, writeSettings, loadIndex } = await import('../src/main/library.js')
@@ -66,7 +66,7 @@ app.whenReady().then(async () => {
     await whenListening()
   } catch (err) {
     console.error(`\ncannot bind port ${PORT}: ${err.message}`)
-    console.error('close any running copy of Zbirka and try again\n')
+    console.error('close any running copy of Bowerbird and try again\n')
     app.exit(1)
     return
   }
@@ -97,7 +97,7 @@ app.whenReady().then(async () => {
   ok('the item is in the library', items.length === 1, `${items.length}`)
   ok('sourceUrl is recorded', items[0]?.sourceUrl === 'https://example.com/article', items[0]?.sourceUrl)
   ok('dimensions were probed', items[0]?.width === 300 && items[0]?.height === 200)
-  ok('a thumbnail was generated', (await readdir(join(ROOT, '.zbirka', 'thumbs'))).length === 1)
+  ok('a thumbnail was generated', (await readdir(join(ROOT, '.bowerbird', 'thumbs'))).length === 1)
   ok('the callback fired for the open window', !!saved && saved.id === body.id)
 
   console.log('\n4. Validation')

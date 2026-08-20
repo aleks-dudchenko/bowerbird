@@ -12,7 +12,7 @@ import LibraryView from './views/LibraryView.jsx'
 import SpacesView from './views/SpacesView.jsx'
 import TrashView from './views/TrashView.jsx'
 
-const api = window.zbirka
+const api = window.bowerbird
 
 // Shell only: which mode is showing, what is selected, and the drop
 // target shared by every view. Library state lives in useLibrary, board

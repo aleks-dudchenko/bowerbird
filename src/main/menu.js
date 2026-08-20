@@ -45,7 +45,7 @@ export function buildMenu({ onSettings, onAddFiles, onNewSpace, onChooseLibrary 
       submenu: [
         {
           label: 'Project on GitHub',
-          click: () => shell.openExternal('https://github.com/aleks-dudchenko/zbirka'),
+          click: () => shell.openExternal('https://github.com/aleks-dudchenko/bowerbird'),
         },
       ],
     },

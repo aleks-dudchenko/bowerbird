@@ -33,7 +33,7 @@ jobs:
             Unsigned build. macOS will refuse it on first launch; to allow it:
 
             ```
-            xattr -dr com.apple.quarantine /Applications/Zbirka.app
+            xattr -dr com.apple.quarantine /Applications/Bowerbird.app
             ```
 
             Or build from source with `npm ci && make -C helper && npm run build`.

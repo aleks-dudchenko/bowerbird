@@ -1,11 +1,11 @@
-const api = window.zbirka
+const api = window.bowerbird
 
 export default function TitleBar({
   root, count, mode, onMode, progress, onChooseLibrary, onAddFiles, onSettings,
 }) {
   return (
     <header className="titlebar">
-      <span className="wordmark">Zbirka</span>
+      <span className="wordmark">Bowerbird</span>
 
       {root && (
         <>

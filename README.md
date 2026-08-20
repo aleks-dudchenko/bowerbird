@@ -1,4 +1,4 @@
-# Zbirka
+# Bowerbird
 
 A local design-reference library for macOS. Offline, no account, no
 subscription. Your files stay in an ordinary folder — the app does not
@@ -69,7 +69,7 @@ Video: MP4, MOV, M4V, WEBM — a poster frame is extracted on import
 
 ```
 npm install
-make -C helper   # the Swift binary used for video, OCR, PDF and HEIC
+make -C helper   # required: the Swift binary for video, OCR, PDF and HEIC
 npm run dev      # start the app
 npm run verify   # build + lint + unit tests + disk layer + save server
 ```
@@ -83,14 +83,14 @@ process rather than silently testing the wrong one.
 Works in any Chromium browser — Comet, Chrome, Brave, Edge, Arc. It is not
 on any web store and is not meant to be: load it unpacked from this repo.
 
-1. In Zbirka, open **Settings** and click **Show the extension folder**.
+1. In Bowerbird, open **Settings** and click **Show the extension folder**.
 2. In the browser open its extensions page (`comet://extensions`,
    `chrome://extensions`, `brave://extensions` …).
 3. Turn on **Developer mode**, choose **Load unpacked**, pick that folder.
-4. In Zbirka click **Pair extension**, then press **Connect** on the
+4. In Bowerbird click **Pair extension**, then press **Connect** on the
    extension's options page. No token to copy.
 
-Right-click any image or video on a page → **Save to Zbirka**.
+Right-click any image or video on a page → **Save to Bowerbird**.
 
 The app listens on `127.0.0.1:47821`, only while it is running. Pairing
 only answers while you have opened a two-minute window from inside the
@@ -111,7 +111,7 @@ Developer account. macOS will refuse an unsigned app on first launch; to
 allow it:
 
 ```
-xattr -dr com.apple.quarantine /Applications/Zbirka.app
+xattr -dr com.apple.quarantine /Applications/Bowerbird.app
 ```
 
 ## Licence

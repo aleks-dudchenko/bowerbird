@@ -5,7 +5,7 @@
 // gets revisited when search brings keyboard navigation.
 import { useRef } from 'react'
 
-export const srcOf = (p) => `zb://local/${encodeURIComponent(p)}`
+export const srcOf = (p) => `bb://local/${encodeURIComponent(p)}`
 
 const formatDuration = (s) => {
   if (!s && s !== 0) return null

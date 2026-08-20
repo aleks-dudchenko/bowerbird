@@ -11,9 +11,9 @@ const run = promisify(execFile)
 // archive cannot be executed.
 function candidates() {
   return [
-    join(process.resourcesPath || '', 'zbirka-helper'),
-    join(app.getAppPath(), 'build', 'zbirka-helper'),
-    join(process.cwd(), 'build', 'zbirka-helper'),
+    join(process.resourcesPath || '', 'bowerbird-helper'),
+    join(app.getAppPath(), 'build', 'bowerbird-helper'),
+    join(process.cwd(), 'build', 'bowerbird-helper'),
   ]
 }
 
@@ -37,7 +37,7 @@ export const searchedPaths = () => candidates()
 
 async function call(args, timeout = 30_000) {
   const bin = await helperPath()
-  if (!bin) throw new Error('zbirka-helper is missing — run `make -C helper`')
+  if (!bin) throw new Error('bowerbird-helper is missing — run `make -C helper`')
   const { stdout } = await run(bin, args, { timeout, maxBuffer: 8 * 1024 * 1024 })
   const result = JSON.parse(stdout.trim().split('\n').pop())
   if (!result.ok) throw new Error(result.error || 'helper failed')

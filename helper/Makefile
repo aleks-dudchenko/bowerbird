@@ -1,5 +1,5 @@
 # Universal binary so one build serves both Apple Silicon and Intel.
-BIN = ../build/zbirka-helper
+BIN = ../build/bowerbird-helper
 
 all: $(BIN)
 

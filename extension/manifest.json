@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Save to Zbirka",
+  "name": "Save to Bowerbird",
   "version": "0.1.0",
-  "description": "Right-click any image or video and save it into your local Zbirka library. Talks only to the app on your own machine.",
+  "description": "Right-click any image or video and save it into your local Bowerbird library. Talks only to the app on your own machine.",
   "permissions": [
     "contextMenus",
     "storage",

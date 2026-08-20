@@ -12,7 +12,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 // A custom zb:// scheme serves disk files in a controlled way — without
 // disabling webSecurity and without exposing the filesystem to JS.
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'zb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  { scheme: 'bb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ])
 
 // The save server binds a fixed port, so a second copy of the app would
@@ -72,7 +72,7 @@ app.whenReady().then(async () => {
   const settings = await readSettings()
   if (settings.libraryRoot) setAllowedRoot(settings.libraryRoot)
 
-  protocol.handle('zb', async (request) => {
+  protocol.handle('bb', async (request) => {
     const path = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, ''))
 
     // Without this check the renderer could ask for any absolute path on

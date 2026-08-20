@@ -8,8 +8,8 @@ const ENDPOINT = 'http://127.0.0.1:47821/save'
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
-      id: 'save-to-zbirka',
-      title: 'Save to Zbirka',
+      id: 'save-to-bowerbird',
+      title: 'Save to Bowerbird',
       contexts: ['image', 'video'],
     })
   })
@@ -25,11 +25,11 @@ function notify(title, message) {
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId !== 'save-to-zbirka') return
+  if (info.menuItemId !== 'save-to-bowerbird') return
 
   const { token } = await chrome.storage.local.get('token')
   if (!token) {
-    notify('Zbirka', 'Open the extension options and paste your token first.')
+    notify('Bowerbird', 'Open the extension options and paste your token first.')
     return
   }
 
@@ -43,16 +43,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       }),
     })
 
-    if (res.status === 401) return notify('Zbirka', 'Token rejected. Check the options page.')
-    if (res.status === 409) return notify('Zbirka', 'No library folder chosen in the app yet.')
+    if (res.status === 401) return notify('Bowerbird', 'Token rejected. Check the options page.')
+    if (res.status === 409) return notify('Bowerbird', 'No library folder chosen in the app yet.')
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      return notify('Zbirka', body.error || `Save failed (${res.status}).`)
+      return notify('Bowerbird', body.error || `Save failed (${res.status}).`)
     }
     const body = await res.json()
-    notify('Saved to Zbirka', body.title || 'Added to your library.')
+    notify('Saved to Bowerbird', body.title || 'Added to your library.')
   } catch {
     // A refused connection means the desktop app simply is not running.
-    notify('Zbirka', 'Zbirka is not running. Start the app and try again.')
+    notify('Bowerbird', 'Bowerbird is not running. Start the app and try again.')
   }
 })

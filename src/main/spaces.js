@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { spacesDir, writeAtomic } from './library.js'
 
 // A space is a board: a set of positioned nodes referencing library
-// items. It lives beside items/ rather than inside .zbirka/ because it
+// items. It lives beside items/ rather than inside .bowerbird/ because it
 // is authored work, not a derivable cache — deleting the cache must
 // never destroy a moodboard.
 //

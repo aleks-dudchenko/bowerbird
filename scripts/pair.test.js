@@ -7,7 +7,7 @@ import { rm, mkdir } from 'node:fs/promises'
 
 process.on('unhandledRejection', (err) => { console.error(err); app.exit(1) })
 
-const BASE = join(tmpdir(), `zbirka-pair-${process.pid}`)
+const BASE = join(tmpdir(), `bowerbird-pair-${process.pid}`)
 app.setPath('userData', join(BASE, 'userData'))
 
 const { ensureLibrary, writeSettings } = await import('../src/main/library.js')
@@ -37,7 +37,7 @@ app.whenReady().then(async () => {
     await whenListening()
   } catch (err) {
     console.error(`\ncannot bind port ${PORT}: ${err.message}`)
-    console.error('close any running copy of Zbirka and try again\n')
+    console.error('close any running copy of Bowerbird and try again\n')
     app.exit(1)
     return
   }

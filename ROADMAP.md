@@ -1,4 +1,4 @@
-# Zbirka — roadmap
+# Bowerbird — roadmap
 
 A local design-reference library: offline, no account, files stay yours.
 
@@ -17,7 +17,7 @@ MyLibrary/                     ← safe to put in Dropbox / iCloud
 │  └─ 2026/08/a7f3k2.json      sidecar: tags, note, source, dimensions
 ├─ spaces/
 │  └─ s7f2k1.json              a board: positioned references
-└─ .zbirka/                    rebuildable cache, safe to delete
+└─ .bowerbird/                    rebuildable cache, safe to delete
    ├─ thumbs/
    └─ previews/
 ```
@@ -27,12 +27,12 @@ authored work, not something derivable — deleting the cache must never
 destroy one.
 
 - `items/` syncs as ordinary files — no conflicts.
-- `.zbirka/` is **local to each machine** and fully rebuildable. Delete it
+- `.bowerbird/` is **local to each machine** and fully rebuildable. Delete it
   and the app reconstructs everything from the sidecars.
 - The library stays readable without the app, ports anywhere, and can be
   committed to git.
 
-`npm run smoke` asserts this directly: it deletes `.zbirka/` mid-run and
+`npm run smoke` asserts this directly: it deletes `.bowerbird/` mid-run and
 verifies that every record and tag survives.
 
 ## Stack
@@ -71,7 +71,7 @@ gesture. A tray and tag rail stand in for search until it arrives. Trash
 that stamps `deletedAt` rather than deleting, with undo.
 
 **M3 — Browser extension** ✅
-MV3 extension with a "Save to Zbirka" context menu. The app listens on
+MV3 extension with a "Save to Bowerbird" context menu. The app listens on
 `127.0.0.1:47821` only while it is open, guarded by a bearer token the
 user pastes once. Downloads happen in the main process, formats come from
 an explicit allowlist and images must actually decode before they are
@@ -101,7 +101,7 @@ list is read from the OS rather than hard-coded.
 
 Local CLIP (`Xenova/clip-vit-base-patch32`) for search by description.
 Weights download on first use, never at install. Vectors live in
-`.zbirka/clip/` as cache, never in sidecars. Zero-shot tags land in
+`.bowerbird/clip/` as cache, never in sidecars. Zero-shot tags land in
 `autoTags` and are promoted to real tags only by a click, so a guess never
 overwrites what a person typed.
 

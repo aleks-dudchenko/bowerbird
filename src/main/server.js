@@ -116,7 +116,7 @@ const extForMime = (type) => MIME_EXT[String(type).split(';')[0].trim().toLowerC
 // of these the extension fails on a large share of the real web.
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-  '(KHTML, like Gecko) Zbirka/0.4 Safari/537.36'
+  '(KHTML, like Gecko) Bowerbird/0.4 Safari/537.36'
 
 async function fetchImage(url, pageUrl) {
   if (url.startsWith('data:')) {
@@ -152,7 +152,7 @@ async function fetchImage(url, pageUrl) {
 }
 
 // Saves used to be titled after the temp file they arrived in —
-// "zbirka-1787217222181", which tells the user nothing. Use the image's
+// "bowerbird-1787217222181", which tells the user nothing. Use the image's
 // own filename, then the page it came from.
 export function titleFor(url, pageUrl) {
   try {
@@ -187,7 +187,7 @@ export function startServer(onSaved) {
         return send(
           res,
           403,
-          { error: 'open Settings in Zbirka and click Pair extension first' },
+          { error: 'open Settings in Bowerbird and click Pair extension first' },
           origin
         )
       }
@@ -221,7 +221,7 @@ export function startServer(onSaved) {
         return send(res, err.upstream ? 502 : 415, { error: err.message }, origin)
       }
 
-      tmp = join(tmpdir(), `zbirka-${Date.now()}${ext}`)
+      tmp = join(tmpdir(), `bowerbird-${Date.now()}${ext}`)
       await writeFile(tmp, buffer)
       if (!kindOf(tmp)) return send(res, 415, { error: 'unsupported format' }, origin)
 

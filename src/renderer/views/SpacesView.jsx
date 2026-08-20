@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Canvas from '../components/Canvas.jsx'
 import Tray from '../components/Tray.jsx'
 
-const api = window.zbirka
+const api = window.bowerbird
 
 export default function SpacesView({
   items, byId, space, spaces, onOpen, onCreate, onRemoveSpace, onRename,
@@ -60,7 +60,7 @@ export default function SpacesView({
     (e, at) => {
       // Two kinds of drop land here: files from Finder, and an item
       // dragged up out of the tray.
-      const itemId = e.dataTransfer.getData('application/x-zbirka-item')
+      const itemId = e.dataTransfer.getData('application/x-bowerbird-item')
       if (itemId) {
         const item = byId.get(itemId)
         if (item) onAddItems([item], at)
