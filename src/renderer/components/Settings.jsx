@@ -85,10 +85,10 @@ export default function Settings({ onClose, root, items, theme }) {
         </div>
 
         <p className="muted">
-          Bowerbird listens on <code>127.0.0.1</code> only while the app is open.
-          Works in any Chromium browser — Comet, Chrome, Brave, Edge, Arc.
-          Open its extensions page, turn on developer mode, load the folder
-          below unpacked, then paste this token into the extension's options.
+          Bowerbird listens on <code>127.0.0.1</code> only while the app is
+          open. Works in any Chromium browser — Comet, Chrome, Brave, Edge,
+          Arc. Load the folder below as an unpacked extension, open its
+          options, then click Pair here: the page connects by itself.
         </p>
 
         <div className="button-row">
@@ -104,8 +104,11 @@ export default function Settings({ onClose, root, items, theme }) {
         </div>
         {extPath && <div className="ai-progress mono-path">{extPath}</div>}
 
-        <div className="field">
-          <span>Connection token</span>
+        <details className="token-details">
+          <summary>Connection token</summary>
+          <p className="muted">
+            Only needed if pairing cannot reach the app.
+          </p>
           <div className="token-row">
             <input readOnly value={revealed ? status?.token ?? '' : '••••••••••••••••••••'} />
             <button className="ghost" onClick={() => setRevealed((r) => !r)}>
@@ -115,7 +118,7 @@ export default function Settings({ onClose, root, items, theme }) {
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-        </div>
+        </details>
 
         <dl className="meta">
           <dt>Status</dt>

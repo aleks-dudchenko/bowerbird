@@ -688,3 +688,9 @@ button { font: inherit; }
 /* A full-width segmented control for a setting with three states. */
 .modes.wide { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
 .modes.wide button { padding: 6px 0; }
+
+/* The token is the fallback path now that pairing is the default, so it
+   is folded away rather than presented as the main instruction. */
+.token-details { margin: 16px 0; color: var(--muted); }
+.token-details summary { cursor: pointer; font-size: 11px; color: var(--faint); }
+.token-details .muted { font-size: 12px; margin: 8px 0; }
