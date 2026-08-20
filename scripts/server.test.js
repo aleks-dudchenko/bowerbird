@@ -32,11 +32,14 @@ const ok = (label, cond, extra = '') => {
   console.log(`${cond ? '  ok  ' : '  FAIL'} ${label}${extra ? ' — ' + extra : ''}`)
 }
 
-const post = (body, token) =>
+const EXT_ORIGIN = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop'
+
+const post = (body, token, origin = EXT_ORIGIN) =>
   fetch(URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Origin: origin,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
@@ -114,7 +117,31 @@ app.whenReady().then(async () => {
   const { items: afterBad } = await loadIndex(ROOT)
   ok('nothing bogus reached the library', afterBad.length === 1, `${afterBad.length}`)
 
-  console.log('\n5. Rotation')
+  console.log('\n5. CORS')
+  // The extension's service worker sends an Origin header. A wildcard
+  // inside a scheme is not valid CORS, so the origin has to be echoed
+  // back exactly — an earlier version sent "chrome-extension://*", which
+  // no browser accepts.
+  const preflight = await fetch(URL, {
+    method: 'OPTIONS',
+    headers: { Origin: EXT_ORIGIN, 'Access-Control-Request-Method': 'POST' },
+  })
+  ok('preflight succeeds', preflight.status === 204, `got ${preflight.status}`)
+  ok('the extension origin is echoed back exactly',
+    preflight.headers.get('access-control-allow-origin') === EXT_ORIGIN,
+    String(preflight.headers.get('access-control-allow-origin')))
+  ok('Authorization is an allowed header',
+    (preflight.headers.get('access-control-allow-headers') || '').includes('Authorization'))
+
+  const fromPage = await fetch(URL, {
+    method: 'OPTIONS',
+    headers: { Origin: 'https://evil.example.com', 'Access-Control-Request-Method': 'POST' },
+  })
+  ok('a web page origin gets no CORS grant',
+    !fromPage.headers.get('access-control-allow-origin'),
+    String(fromPage.headers.get('access-control-allow-origin')))
+
+  console.log('\n6. Rotation')
   const fresh = await rotateToken()
   ok('rotation produces a different token', fresh !== token)
   const stale = await post({ url: dataUrl }, token)

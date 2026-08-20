@@ -31,17 +31,25 @@ export async function rotateToken() {
   return token
 }
 
-function send(res, status, body) {
-  const payload = JSON.stringify(body)
+// Only extensions may talk to this. A wildcard inside a scheme is not
+// valid CORS — the origin has to be echoed back exactly, or refused.
+const allowedOrigin = (origin) =>
+  origin && origin.startsWith('chrome-extension://') ? origin : null
+
+function send(res, status, body, origin) {
+  const allow = allowedOrigin(origin)
   res.writeHead(status, {
     'Content-Type': 'application/json',
-    // Only the extension talks to this; a web page must never be able to
-    // probe it from a tab the user happens to have open.
-    'Access-Control-Allow-Origin': 'chrome-extension://*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    ...(allow
+      ? {
+          'Access-Control-Allow-Origin': allow,
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          Vary: 'Origin',
+        }
+      : {}),
   })
-  res.end(payload)
+  res.end(JSON.stringify(body))
 }
 
 function readBody(req) {
@@ -86,7 +94,14 @@ const extForMime = (type) => MIME_EXT[String(type).split(';')[0].trim().toLowerC
 // The extension sends a URL rather than bytes, so the download happens
 // here where Electron's network stack (and the user's proxy settings)
 // apply. Data URLs are accepted too, for canvas-rendered images.
-async function fetchImage(url) {
+// Plenty of hosts — Wikimedia among them — reject requests with no
+// User-Agent, and CDNs commonly hotlink-protect by Referer. Without both
+// of these the extension fails on a large share of the real web.
+const UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Zbirka/0.4 Safari/537.36'
+
+async function fetchImage(url, pageUrl) {
   if (url.startsWith('data:')) {
     const [head, b64] = url.split(',')
     const ext = extForMime(head.slice(5).replace(/;base64$/, ''))
@@ -94,8 +109,18 @@ async function fetchImage(url) {
     return { buffer: Buffer.from(b64, 'base64'), ext }
   }
 
-  const res = await net.fetch(url)
-  if (!res.ok) throw new Error(`source responded ${res.status}`)
+  // Referer must go through the spec's `referrer` option, not a header:
+  // it is a forbidden header name, and setting it by hand makes Electron
+  // reject the whole request with ERR_BLOCKED_BY_CLIENT.
+  const res = await net.fetch(url, {
+    headers: { 'User-Agent': UA, Accept: 'image/*,video/*;q=0.9,*/*;q=0.8' },
+    ...(pageUrl ? { referrer: pageUrl } : {}),
+  })
+  if (!res.ok) {
+    const err = new Error(`the source refused the download (${res.status})`)
+    err.upstream = true
+    throw err
+  }
   const buffer = Buffer.from(await res.arrayBuffer())
   if (buffer.length > MAX_BYTES) throw new Error('file too large')
 
@@ -109,36 +134,63 @@ async function fetchImage(url) {
   return { buffer, ext }
 }
 
+// Saves used to be titled after the temp file they arrived in —
+// "zbirka-1787217222181", which tells the user nothing. Use the image's
+// own filename, then the page it came from.
+export function titleFor(url, pageUrl) {
+  try {
+    if (!url.startsWith('data:')) {
+      const name = decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop() || '')
+      const stem = name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim()
+      if (stem && !/^\d+$/.test(stem)) return stem.slice(0, 120)
+    }
+    if (pageUrl) {
+      const u = new URL(pageUrl)
+      const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || '')
+      const stem = last.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim()
+      return (stem ? `${stem} — ${u.hostname}` : u.hostname).slice(0, 120)
+    }
+  } catch {
+    /* an unparseable URL just falls through to the default */
+  }
+  return 'Saved from the web'
+}
+
 export function startServer(onSaved) {
   if (server) return serverStatus()
 
   server = createServer(async (req, res) => {
-    if (req.method === 'OPTIONS') return send(res, 204, {})
-    if (req.method !== 'POST' || req.url !== '/save') return send(res, 404, { error: 'not found' })
+    const origin = req.headers.origin
+    if (req.method === 'OPTIONS') return send(res, 204, {}, origin)
+    if (req.method !== 'POST' || req.url !== '/save') {
+      return send(res, 404, { error: 'not found' }, origin)
+    }
 
     const token = await getToken()
     const header = req.headers.authorization || ''
-    if (header !== `Bearer ${token}`) return send(res, 401, { error: 'unauthorized' })
+    if (header !== `Bearer ${token}`) return send(res, 401, { error: 'unauthorized' }, origin)
 
     const { libraryRoot } = await readSettings()
-    if (!libraryRoot) return send(res, 409, { error: 'no library chosen' })
+    if (!libraryRoot) return send(res, 409, { error: 'no library chosen' }, origin)
 
     let tmp = null
     try {
       const { url, pageUrl } = JSON.parse(await readBody(req))
-      if (!url) return send(res, 400, { error: 'missing url' })
+      if (!url) return send(res, 400, { error: 'missing url' }, origin)
 
       let buffer
       let ext
       try {
-        ;({ buffer, ext } = await fetchImage(url))
+        ;({ buffer, ext } = await fetchImage(url, pageUrl))
       } catch (err) {
-        return send(res, 415, { error: err.message })
+        // A refusal from the far end is not "unsupported format" — saying
+        // so sent people looking in entirely the wrong place.
+        return send(res, err.upstream ? 502 : 415, { error: err.message }, origin)
       }
 
       tmp = join(tmpdir(), `zbirka-${Date.now()}${ext}`)
       await writeFile(tmp, buffer)
-      if (!kindOf(tmp)) return send(res, 415, { error: 'unsupported format' })
+      if (!kindOf(tmp)) return send(res, 415, { error: 'unsupported format' }, origin)
 
       // A correct content-type header is not proof of correct bytes.
       // Decoding the image is, and it costs a few milliseconds.
@@ -146,15 +198,18 @@ export function startServer(onSaved) {
         try {
           await sharp(tmp).metadata()
         } catch {
-          return send(res, 415, { error: 'not a decodable image' })
+          return send(res, 415, { error: 'not a decodable image' }, origin)
         }
       }
 
-      const item = await ingestFile(libraryRoot, tmp, { sourceUrl: pageUrl || url })
+      const item = await ingestFile(libraryRoot, tmp, {
+        sourceUrl: pageUrl || url,
+        title: titleFor(url, pageUrl),
+      })
       onSaved?.(item)
-      send(res, 200, { ok: true, id: item.id, title: item.title })
+      send(res, 200, { ok: true, id: item.id, title: item.title }, origin)
     } catch (err) {
-      send(res, 500, { error: err.message || 'save failed' })
+      send(res, 500, { error: err.message || 'save failed' }, origin)
     } finally {
       if (tmp) await unlink(tmp).catch(() => {})
     }

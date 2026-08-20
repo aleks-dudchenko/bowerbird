@@ -154,7 +154,7 @@ export async function ingestFile(root, srcPath, extra = {}) {
     id,
     file: `${id}${ext}`,
     kind,
-    title: basename(srcPath, ext),
+    title: extra.title || basename(srcPath, ext),
     addedAt: now.toISOString(),
     sha256: await sha256(dest),
     width,

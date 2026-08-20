@@ -2,10 +2,20 @@ import js from '@eslint/js'
 import reactHooks from 'eslint-plugin-react-hooks'
 
 export default [
-  { ignores: ['out/**', 'release/**', 'node_modules/**', 'extension/**'] },
+  { ignores: ['out/**', 'release/**', 'node_modules/**'] },
   js.configs.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    // The extension runs in Chrome, not Electron: different globals, and
+    // it was excluded from linting entirely until now.
+    files: ['extension/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'script',
+      globals: { chrome: 'readonly', document: 'readonly', fetch: 'readonly', setTimeout: 'readonly' },
+    },
+  },
+  {
+    files: ['src/**/*.{js,jsx}', 'scripts/**/*.js', 'test/**/*.js', '*.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',

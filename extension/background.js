@@ -3,18 +3,22 @@
 // that token is the only thing standing between a page and the library.
 const ENDPOINT = 'http://127.0.0.1:47821/save'
 
+// removeAll first: onInstalled fires again on every update and reload,
+// and creating a duplicate id throws into the extension's error log.
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'save-to-zbirka',
-    title: 'Save to Zbirka',
-    contexts: ['image', 'video'],
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: 'save-to-zbirka',
+      title: 'Save to Zbirka',
+      contexts: ['image', 'video'],
+    })
   })
 })
 
 function notify(title, message) {
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'icon.png',
+    iconUrl: chrome.runtime.getURL('icon.png'),
     title,
     message,
   })
