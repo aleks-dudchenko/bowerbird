@@ -34,3 +34,6 @@ jobs:
 
       - name: Save server
         run: npm run test:server
+
+      - name: Extension pairing
+        run: npm run test:pair
