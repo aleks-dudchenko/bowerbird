@@ -5,8 +5,6 @@ export default function TitleBar({
 }) {
   return (
     <header className="titlebar">
-      <span className="wordmark">Bowerbird</span>
-
       {root && (
         <>
           <div className="modes">

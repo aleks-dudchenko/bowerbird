@@ -61,6 +61,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  /* Left padding clears the traffic lights; the app name is not
+     repeated here because the menu bar already says it. */
   padding: 0 14px 0 84px;
   border-bottom: 1px solid var(--line);
   -webkit-app-region: drag;
@@ -68,7 +70,6 @@ body {
 
 .titlebar button, .titlebar input, .titlebar select { -webkit-app-region: no-drag; }
 .spacer { flex: 1; }
-.wordmark { font-size: 13px; font-weight: 600; color: var(--muted); }
 
 .modes {
   display: flex;
