@@ -127,15 +127,17 @@ app.whenReady().then(async () => {
   // it would litter the user's own folder with a dead name forever — and
   // the migration has to run for a library already in use, not only for
   // one being chosen for the first time.
-  const legacyCache = join(ROOT, '.zbirka')
-  await rm(cacheDir(ROOT), { recursive: true, force: true })
+  // On its own root: this deletes a cache folder, and the sections that
+  // follow depend on the real one still having its thumbnails.
+  const OLD_ROOT = join(BASE, 'old-library')
+  const legacyCache = join(OLD_ROOT, '.zbirka')
   await mkdir(join(legacyCache, 'thumbs'), { recursive: true })
   await writeFile(join(legacyCache, 'thumbs', 'marker.webp'), 'x')
-  await ensureLibrary(ROOT)
+  await ensureLibrary(OLD_ROOT)
   ok('the old cache folder is renamed, not abandoned',
-    !(await stat(legacyCache).catch(() => null)) && !!(await stat(cacheDir(ROOT)).catch(() => null)))
+    !(await stat(legacyCache).catch(() => null)) && !!(await stat(cacheDir(OLD_ROOT)).catch(() => null)))
   ok('what was inside it came along',
-    !!(await stat(join(cacheDir(ROOT), 'thumbs', 'marker.webp')).catch(() => null)))
+    !!(await stat(join(cacheDir(OLD_ROOT), 'thumbs', 'marker.webp')).catch(() => null)))
 
   console.log('\n7. Old sidecars migrate on load')
   // Simulate a library written by the first version: no kind, no schema,
