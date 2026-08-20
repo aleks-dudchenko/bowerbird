@@ -18,7 +18,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { copyFile } from 'node:fs/promises'
 import sharp from 'sharp'
-import { ensureLibrary, loadIndex, spacesDir } from '../src/main/library.js'
+import { ensureLibrary, loadIndex, spacesDir, cacheDir } from '../src/main/library.js'
 import { ocrLanguages, helperPath } from '../src/main/helper.js'
 import { ingestFile, updateSidecar, trashItem, restoreItem, backfillPalette, runOcr } from '../src/main/ingest.js'
 import { createSpace, writeSpace, readSpace, listSpaces, removeSpace, newNodeId } from '../src/main/spaces.js'
@@ -122,7 +122,22 @@ app.whenReady().then(async () => {
   ok('OCR reads text out of an image', /pricing/i.test(recognised.ocr || ''), JSON.stringify(recognised.ocr))
   ok('the OCR timestamp is recorded', !!recognised.ocrAt)
 
-  console.log('\n6. Old sidecars migrate on load')
+  console.log('\n6. A library from before the rename is carried over')
+  // The cache folder used to be .zbirka. It is only a cache, but leaving
+  // it would litter the user's own folder with a dead name forever — and
+  // the migration has to run for a library already in use, not only for
+  // one being chosen for the first time.
+  const legacyCache = join(ROOT, '.zbirka')
+  await rm(cacheDir(ROOT), { recursive: true, force: true })
+  await mkdir(join(legacyCache, 'thumbs'), { recursive: true })
+  await writeFile(join(legacyCache, 'thumbs', 'marker.webp'), 'x')
+  await ensureLibrary(ROOT)
+  ok('the old cache folder is renamed, not abandoned',
+    !(await stat(legacyCache).catch(() => null)) && !!(await stat(cacheDir(ROOT)).catch(() => null)))
+  ok('what was inside it came along',
+    !!(await stat(join(cacheDir(ROOT), 'thumbs', 'marker.webp')).catch(() => null)))
+
+  console.log('\n7. Old sidecars migrate on load')
   // Simulate a library written by the first version: no kind, no schema,
   // no fields added since. Every feature that branches on kind was
   // silently skipping these.
@@ -145,7 +160,7 @@ app.whenReady().then(async () => {
   ok('the repair is written back, not recomputed every launch', onDisk.kind === 'image')
   ok('user data survived the migration', onDisk.title === original.title)
 
-  console.log('\n7. Palette and flags')
+  console.log('\n8. Palette and flags')
   const red = added.find((a) => a.title === 'sample-1')
   ok('a palette was extracted on import', red.colors.length > 0, `${red.colors.length} colours`)
   ok('the dominant colour matches the fixture',
@@ -168,7 +183,7 @@ app.whenReady().then(async () => {
   ok('backfill recomputes a missing palette', refilled.colors.length > 0)
 
   const total = (await loadIndex(ROOT)).items.length
-  console.log('\n8. Spaces')
+  console.log('\n9. Spaces')
   let space = await createSpace(ROOT, 'Test board')
   space = await writeSpace(ROOT, {
     ...space,
@@ -187,7 +202,7 @@ app.whenReady().then(async () => {
   ok('list returns a summary, not full nodes',
     summary[0].nodeCount === 3 && summary[0].nodes === undefined)
 
-  console.log('\n9. Trash keeps the file on disk')
+  console.log('\n10. Trash keeps the file on disk')
   await trashItem(added[0])
   idx = await loadIndex(ROOT)
   ok('trashed item leaves the library', idx.items.length === total - 1, `${idx.items.length}`)
@@ -197,7 +212,7 @@ app.whenReady().then(async () => {
   idx = await loadIndex(ROOT)
   ok('restore brings it back', idx.items.length === total)
 
-  console.log('\n10. Cache is rebuildable (the core architectural claim)')
+  console.log('\n11. Cache is rebuildable (the core architectural claim)')
   await rm(join(ROOT, '.bowerbird'), { recursive: true, force: true })
   idx = await loadIndex(ROOT)
   const spacesAfter = await listSpaces(ROOT)

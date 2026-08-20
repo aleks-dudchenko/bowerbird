@@ -53,6 +53,11 @@ export function registerIpc() {
 
   ipcMain.handle('library:load', async (_e, root) => {
     setAllowedRoot(root)
+    // Not only on first choice: an existing library still needs folders
+    // that were added since it was created, and the cache rename after
+    // the project was renamed. Running it only in library:choose meant
+    // neither ever happened for a library already in use.
+    await ensureLibrary(root)
     return loadIndex(root)
   })
 
