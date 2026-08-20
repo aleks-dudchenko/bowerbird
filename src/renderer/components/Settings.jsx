@@ -11,6 +11,7 @@ export default function Settings({ onClose, root, items }) {
   const [copied, setCopied] = useState(false)
   const [ai, setAi] = useState(null)
   const [helper, setHelper] = useState(null)
+  const [extPath, setExtPath] = useState(null)
   const [result, setResult] = useState(null)
 
   useEffect(() => {
@@ -44,9 +45,20 @@ export default function Settings({ onClose, root, items }) {
 
         <p className="muted">
           Zbirka listens on <code>127.0.0.1</code> only while the app is open.
-          Load the <code>extension/</code> folder in Chrome as an unpacked
-          extension, open its options, and paste this token.
+          Works in any Chromium browser — Comet, Chrome, Brave, Edge, Arc.
+          Open its extensions page, turn on developer mode, load the folder
+          below unpacked, then paste this token into the extension's options.
         </p>
+
+        <div className="button-row">
+          <button
+            className="ghost"
+            onClick={async () => setExtPath((await api.revealExtension()).path)}
+          >
+            Show the extension folder
+          </button>
+        </div>
+        {extPath && <div className="ai-progress mono-path">{extPath}</div>}
 
         <div className="field">
           <span>Connection token</span>

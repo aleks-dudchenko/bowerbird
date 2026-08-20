@@ -617,3 +617,10 @@ button { font: inherit; }
 .ai-progress.is-error { color: var(--danger); border-color: var(--danger); }
 
 .is-error-text { color: var(--danger); }
+
+.mono-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  word-break: break-all;
+}

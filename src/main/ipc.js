@@ -9,6 +9,8 @@ import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './s
 import { getToken, rotateToken, serverStatus } from './server.js'
 import { indexLibrary, query as semanticQuery, autoTag, cancelIndexing } from './ai.js'
 import { helperPath, searchedPaths } from './helper.js'
+import { join } from 'node:path'
+import { access } from 'node:fs/promises'
 import { runOcr } from './ingest.js'
 
 // One event envelope instead of a channel per notification. Import
@@ -147,6 +149,25 @@ export function registerIpc() {
 
   ipcMain.handle('server:status', async () => ({ ...serverStatus(), token: await getToken() }))
   ipcMain.handle('server:rotateToken', async () => ({ token: await rotateToken() }))
+
+  // Loading an unpacked extension means pointing Chrome at a folder, so
+  // the app has to be able to show the user where that folder is.
+  ipcMain.handle('extension:reveal', async () => {
+    const candidates = [
+      join(process.resourcesPath || '', 'extension'),
+      join(process.cwd(), 'extension'),
+    ]
+    for (const dir of candidates) {
+      try {
+        await access(join(dir, 'manifest.json'))
+        shell.openPath(dir)
+        return { path: dir }
+      } catch {
+        /* try the next location */
+      }
+    }
+    return { path: null }
+  })
 
   // ---- local AI --------------------------------------------------------
 

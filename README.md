@@ -80,14 +80,21 @@ process rather than silently testing the wrong one.
 
 ### Browser extension
 
-Open **Settings** in the app and copy the connection token, then load
-`extension/` in Chrome via `chrome://extensions` → Developer mode →
-*Load unpacked*, open its options and paste the token. Right-click any
-image or video on a page and choose **Save to Zbirka**.
+Works in any Chromium browser — Comet, Chrome, Brave, Edge, Arc. It is not
+on any web store and is not meant to be: load it unpacked from this repo.
 
-The app listens on `127.0.0.1:47821` and only while it is running. The
-token is the only credential; rotating it in Settings revokes the old one
-immediately.
+1. In Zbirka, open **Settings** and click **Show the extension folder**.
+2. In the browser open its extensions page (`comet://extensions`,
+   `chrome://extensions`, `brave://extensions` …).
+3. Turn on **Developer mode**, choose **Load unpacked**, pick that folder.
+4. Open the extension's **options** and paste the token from Settings.
+
+Right-click any image or video on a page → **Save to Zbirka**.
+
+The app listens on `127.0.0.1:47821`, only while it is running. The token
+is the only credential; rotating it in Settings revokes the old one at
+once. Keep the folder where it is — a Chromium browser identifies an
+unpacked extension by its path, so moving it means loading it again.
 
 ## Building a release
 

@@ -30,6 +30,10 @@ asarUnpack:
 extraResources:
   - from: build/zbirka-helper
     to: zbirka-helper
+  # The extension is loaded unpacked from disk, so it has to exist on disk
+  # after installing the app — not only in the source checkout.
+  - from: extension
+    to: extension
 
 mac:
   category: public.app-category.graphics-design

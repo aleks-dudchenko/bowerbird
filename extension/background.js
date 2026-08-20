@@ -18,7 +18,7 @@ chrome.runtime.onInstalled.addListener(() => {
 function notify(title, message) {
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icon.png'),
+    iconUrl: chrome.runtime.getURL('icon-128.png'),
     title,
     message,
   })
