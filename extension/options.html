@@ -2,41 +2,80 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Save to Bowerbird — options</title>
-    <style>
-      body { font: 13px -apple-system, system-ui, sans-serif; margin: 24px; max-width: 440px; }
-      h1 { font-size: 15px; margin: 0 0 6px; }
-      p { color: #555; line-height: 1.55; }
-      ol { color: #555; line-height: 1.7; padding-left: 20px; }
-      button { padding: 8px 16px; font: inherit; cursor: pointer; }
-      .primary { background: #111; color: #fff; border: none; border-radius: 6px; }
-      .status { margin-top: 12px; min-height: 18px; }
-      .ok { color: #187d3c; }
-      .err { color: #b42318; }
-      details { margin-top: 22px; color: #666; }
-      input { width: 100%; padding: 8px; font: inherit; box-sizing: border-box; margin-top: 8px; }
-    </style>
+    <title>Bowerbird — connect</title>
+    <link rel="stylesheet" href="options.css" />
   </head>
   <body>
-    <h1>Connect to Bowerbird</h1>
-    <ol>
-      <li>Open Bowerbird and go to <b>Settings</b>.</li>
-      <li>Click <b>Pair extension</b>.</li>
-      <li>Come back here and press Connect within two minutes.</li>
-    </ol>
+    <main>
+      <header>
+        <h1>Connect to Bowerbird</h1>
+        <p class="lede">
+          This extension talks only to the Bowerbird app on your own machine.
+          Pair once and it stays connected.
+        </p>
+      </header>
 
-    <button id="pair" class="primary">Connect</button>
-    <div id="status" class="status"></div>
+      <div id="state" class="state is-waiting">
+        <span class="dot"></span>
+        <span id="state-text">Looking for Bowerbird…</span>
+      </div>
 
-    <details>
-      <summary>Paste a token instead</summary>
-      <p>
-        Only needed if pairing cannot reach the app. The token is in Bowerbird
-        under Settings → Reveal.
-      </p>
-      <input id="token" type="password" placeholder="Paste the token" autocomplete="off" />
-      <button id="save">Save token</button>
-    </details>
+      <ol class="steps">
+        <li id="step-1">
+          <div class="step-text">
+            <b>Open Bowerbird</b> and click <b>Settings</b> in the top right.
+          </div>
+          <svg class="shot" viewBox="0 0 260 84" role="img" aria-label="The app title bar with Settings on the right">
+            <rect x="1" y="1" width="258" height="82" rx="8" class="win" />
+            <circle cx="16" cy="17" r="4" class="dotted" />
+            <circle cx="29" cy="17" r="4" class="dotted" />
+            <circle cx="42" cy="17" r="4" class="dotted" />
+            <rect x="60" y="10" width="34" height="14" rx="4" class="chip" />
+            <rect x="98" y="10" width="34" height="14" rx="4" class="chip-off" />
+            <rect x="206" y="10" width="46" height="14" rx="4" class="chip-hi" />
+            <text x="229" y="20" class="label">Settings</text>
+            <rect x="14" y="36" width="106" height="38" rx="5" class="thumb" />
+            <rect x="128" y="36" width="106" height="38" rx="5" class="thumb" />
+          </svg>
+        </li>
+
+        <li id="step-2">
+          <div class="step-text">
+            Click <b>Pair extension</b>. A two-minute window opens.
+          </div>
+          <svg class="shot" viewBox="0 0 260 84" role="img" aria-label="The settings sheet with the Pair extension button">
+            <rect x="1" y="1" width="258" height="82" rx="8" class="win" />
+            <rect x="20" y="12" width="120" height="7" rx="3" class="line" />
+            <rect x="20" y="26" width="200" height="5" rx="2" class="line-dim" />
+            <rect x="20" y="36" width="170" height="5" rx="2" class="line-dim" />
+            <rect x="20" y="54" width="84" height="18" rx="5" class="chip-hi" />
+            <text x="62" y="66" class="label">Pair extension</text>
+            <rect x="112" y="54" width="76" height="18" rx="5" class="chip-off" />
+          </svg>
+        </li>
+
+        <li id="step-3">
+          <div class="step-text">
+            That is all — this page connects by itself the moment the window
+            opens.
+          </div>
+        </li>
+      </ol>
+
+      <button id="pair" class="primary">Connect now</button>
+
+      <details>
+        <summary>Paste a token instead</summary>
+        <p class="fine">
+          Only if pairing cannot reach the app. In Bowerbird, open Settings and
+          click Reveal.
+        </p>
+        <div class="row">
+          <input id="token" type="password" placeholder="Paste the token" autocomplete="off" />
+          <button id="save">Save</button>
+        </div>
+      </details>
+    </main>
+    <script src="options.js"></script>
   </body>
-  <script src="options.js"></script>
 </html>

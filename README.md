@@ -87,8 +87,12 @@ on any web store and is not meant to be: load it unpacked from this repo.
 2. In the browser open its extensions page (`comet://extensions`,
    `chrome://extensions`, `brave://extensions` …).
 3. Turn on **Developer mode**, choose **Load unpacked**, pick that folder.
-4. In Bowerbird click **Pair extension**, then press **Connect** on the
-   extension's options page. No token to copy.
+4. Open the extension's options and click **Pair extension** in Bowerbird's
+   Settings. The page notices and connects on its own — nothing to copy.
+
+If you change anything in `extension/`, press the reload icon on its card
+in the browser: an unpacked extension keeps the copy it loaded until told
+otherwise.
 
 Right-click any image or video on a page → **Save to Bowerbird**.
 

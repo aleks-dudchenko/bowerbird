@@ -1,0 +1,175 @@
+/* Monochrome, like the app: this page is chrome around someone else's
+   work too. Follows the browser's light or dark setting. */
+:root {
+  --bg: #ffffff;
+  --fg: #16161a;
+  --muted: #6b6b76;
+  --faint: #9a9aa4;
+  --line: #e3e3e8;
+  --surface: #f6f6f8;
+  --ok: #15803d;
+  --warn: #b45309;
+  --err: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0e11;
+    --fg: #e8e8ed;
+    --muted: #8b8b97;
+    --faint: #5a5a66;
+    --line: #26262e;
+    --surface: #16161b;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --err: #f87171;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.55 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Centred, with a readable measure — the old layout ran along the left
+   edge of a full-width window. */
+main {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+header { text-align: center; margin-bottom: 24px; }
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); margin: 0; }
+
+/* ---------- live state ---------- */
+
+.state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 28px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: 0 0 auto; }
+.is-waiting .dot { background: var(--faint); animation: pulse 1.4s ease-in-out infinite; }
+.is-ready .dot { background: var(--warn); }
+.is-open .dot { background: var(--ok); }
+.is-done .dot { background: var(--ok); }
+.is-down .dot { background: var(--err); }
+.is-done { border-color: var(--ok); }
+.is-down { border-color: var(--err); }
+
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+
+/* ---------- steps ---------- */
+
+.steps { list-style: none; counter-reset: s; margin: 0 0 24px; padding: 0; }
+
+.steps li {
+  counter-increment: s;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  transition: opacity 160ms ease;
+}
+
+.steps li::before {
+  content: counter(s);
+  grid-row: 1 / span 2;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.steps li.is-done::before {
+  content: '✓';
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.steps li.is-done { opacity: 0.5; }
+
+.step-text { align-self: center; }
+.step-text b { font-weight: 600; }
+
+/* A drawing rather than a screenshot: it cannot go stale, and it points
+   at the one thing that matters in each step. */
+.shot {
+  grid-column: 2;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.win { fill: var(--surface); stroke: var(--line); }
+.dotted { fill: var(--line); }
+.chip { fill: var(--line); }
+.chip-off { fill: none; stroke: var(--line); }
+.chip-hi { fill: var(--fg); }
+.label { fill: var(--bg); font-size: 7px; text-anchor: middle; font-family: inherit; }
+.thumb { fill: var(--line); }
+.line { fill: var(--fg); }
+.line-dim { fill: var(--line); }
+
+/* ---------- controls ---------- */
+
+button { font: inherit; cursor: pointer; }
+
+.primary {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 9px;
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 500;
+}
+.primary:hover { opacity: 0.88; }
+.primary:disabled { opacity: 0.35; cursor: default; }
+
+details { margin-top: 28px; color: var(--muted); }
+summary { cursor: pointer; font-size: 13px; }
+.fine { font-size: 13px; margin: 10px 0; }
+
+.row { display: flex; gap: 8px; }
+
+input {
+  flex: 1;
+  padding: 9px 10px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+input:focus { outline: none; border-color: var(--faint); }
+
+.row button {
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+}

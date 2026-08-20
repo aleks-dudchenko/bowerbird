@@ -11,7 +11,10 @@ export default [
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'script',
-      globals: { chrome: 'readonly', document: 'readonly', fetch: 'readonly', setTimeout: 'readonly' },
+      globals: {
+        chrome: 'readonly', document: 'readonly', fetch: 'readonly',
+        setTimeout: 'readonly', setInterval: 'readonly',
+      },
     },
   },
   {

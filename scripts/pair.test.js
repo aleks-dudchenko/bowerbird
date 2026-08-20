@@ -42,24 +42,41 @@ app.whenReady().then(async () => {
     return
   }
 
-  console.log('\n1. Closed by default')
+  console.log('\n1. Live status')
+  const statusRes = await fetch(`http://127.0.0.1:${PORT}/status`, { headers: { Origin: EXT } })
+  const status = await statusRes.json()
+  ok('an extension can read the status', statusRes.status === 200, `got ${statusRes.status}`)
+  ok('it reports the app as running', status.running === true)
+  ok('it reports pairing as closed', status.pairing === false)
+
+  const pageStatus = await fetch(`http://127.0.0.1:${PORT}/status`, {
+    headers: { Origin: 'https://evil.example.com' },
+  })
+  ok('a web page cannot read it', pageStatus.status === 403, `got ${pageStatus.status}`)
+
+  console.log('\n2. Closed by default')
   const before = await pair(EXT)
   ok('pairing is refused before the user opens it', before.status === 403, `got ${before.status}`)
 
-  console.log('\n2. Only extensions may ask')
+  console.log('\n3. Only extensions may ask')
   openPairing()
   const fromPage = await pair('https://evil.example.com')
   ok('a web page is refused even inside the window', fromPage.status === 403)
   const noOrigin = await pair(null)
   ok('a request with no origin is refused', noOrigin.status === 403)
 
-  console.log('\n3. Inside the window')
+  const openStatus = await (await fetch(`http://127.0.0.1:${PORT}/status`, {
+    headers: { Origin: EXT },
+  })).json()
+  ok('status reflects the open window', openStatus.pairing === true)
+
+  console.log('\n4. Inside the window')
   const res = await pair(EXT)
   const body = await res.json()
   ok('an extension gets the token', res.status === 200, `got ${res.status}`)
   ok('the token matches the one the app holds', body.token === (await getToken()))
 
-  console.log('\n4. Single use')
+  console.log('\n5. Single use')
   const again = await pair(EXT)
   ok('the window closes after one pairing', again.status === 403, `got ${again.status}`)
 

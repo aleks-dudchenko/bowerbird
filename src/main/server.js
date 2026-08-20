@@ -61,7 +61,7 @@ function send(res, status, body, origin) {
       ? {
           'Access-Control-Allow-Origin': allow,
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
           Vary: 'Origin',
         }
       : {}),
@@ -179,6 +179,19 @@ export function startServer(onSaved) {
   server = createServer(async (req, res) => {
     const origin = req.headers.origin
     if (req.method === 'OPTIONS') return send(res, 204, {}, origin)
+    if (req.method === 'GET' && req.url !== '/status') {
+      return send(res, 404, { error: 'not found' }, origin)
+    }
+    // Lets the options page show live state instead of asking the user to
+    // race a timer they cannot see. Reveals nothing secret: whether the
+    // app is up, and whether the user has opened a window.
+    if (req.method === 'GET' && req.url === '/status') {
+      if (!allowedOrigin(origin)) {
+        return send(res, 403, { error: 'extensions only' }, origin)
+      }
+      return send(res, 200, { running: true, pairing: pairingOpen() }, origin)
+    }
+
     if (req.method === 'POST' && req.url === '/pair') {
       if (!allowedOrigin(origin)) {
         return send(res, 403, { error: 'only a browser extension can pair' }, origin)
