@@ -1,10 +1,11 @@
-import { app, BrowserWindow, shell, protocol, net } from 'electron'
+import { app, BrowserWindow, shell, protocol, net, nativeTheme } from 'electron'
 import { join } from 'node:path'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { registerIpc } from './ipc.js'
 import { readSettings, writeSettings, setAllowedRoot, isInsideLibrary } from './library.js'
 import { startServer, stopServer } from './server.js'
 import { buildMenu } from './menu.js'
+import { applyTheme, backgroundFor } from './theme.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -45,7 +46,7 @@ function createWindow(bounds) {
     minHeight: 600,
     show: false,
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#0e0e11',
+    backgroundColor: backgroundFor(),
     webPreferences: {
       preload: join(__dirname, '../preload/preload.mjs'),
       sandbox: false,
@@ -71,6 +72,7 @@ function createWindow(bounds) {
 app.whenReady().then(async () => {
   const settings = await readSettings()
   if (settings.libraryRoot) setAllowedRoot(settings.libraryRoot)
+  applyTheme(settings.theme)
 
   protocol.handle('bb', async (request) => {
     const path = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, ''))
@@ -91,6 +93,18 @@ app.whenReady().then(async () => {
 
   registerIpc()
   createWindow(settings.windowBounds)
+
+  // Following the system means reacting when it changes, not only at
+  // launch.
+  nativeTheme.on('updated', () => {
+    applyTheme(nativeTheme.themeSource)
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('app:event', {
+        type: 'theme:changed',
+        dark: nativeTheme.shouldUseDarkColors,
+      })
+    }
+  })
 
   // Menu items talk to the renderer rather than duplicating logic in the
   // main process — the window already knows how to open settings, pick a

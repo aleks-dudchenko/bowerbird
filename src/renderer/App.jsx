@@ -3,6 +3,7 @@ import { useLibrary } from './useLibrary.js'
 import { useSpace } from './useSpace.js'
 import { useDropTarget } from './useDropTarget.js'
 import { useSearch } from './useSearch.js'
+import { useTheme } from './useTheme.js'
 import { useGridKeys } from './useGridKeys.js'
 import TitleBar from './components/TitleBar.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
@@ -29,6 +30,7 @@ export default function App() {
   const lib = useLibrary({ onToast: showToast })
   const space = useSpace(lib.root)
   const s = useSearch(lib.items, lib.root)
+  const theme = useTheme()
 
   useEffect(() => {
     api.getSettings(['mode']).then(({ mode: saved }) => saved && setMode(saved))
@@ -193,6 +195,7 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
           root={lib.root}
           items={lib.items}
+          theme={theme}
         />
       )}
 

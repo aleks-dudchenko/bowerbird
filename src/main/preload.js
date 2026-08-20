@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('bowerbird', {
 
   getSettings: (keys) => ipcRenderer.invoke('settings:get', keys),
   patchSettings: (patch) => ipcRenderer.invoke('settings:patch', patch),
+  getTheme: () => ipcRenderer.invoke('theme:get'),
+  setTheme: (source) => ipcRenderer.invoke('theme:set', source),
 
   currentLibrary: () => ipcRenderer.invoke('library:current'),
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),

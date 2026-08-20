@@ -1,12 +1,73 @@
-:root {
-  /* Monochrome on purpose. This is a library of other people's colour —
-     any hue in the interface competes with the work, and it makes judging
-     a palette in the colour filter measurably harder. State is carried by
-     value and weight instead of by hue.
+/* Monochrome on purpose. This is a library of other people's colour — any
+   hue in the interface competes with the work, and it makes judging a
+   palette in the colour filter measurably harder. State is carried by
+   value and weight instead of by hue.
 
-     Red is the one exception and it means exactly one thing: this
-     destroys something. A colour with a single meaning reads louder than
-     an accent that merely means "selected". */
+   Red is the one exception and it means exactly one thing: this destroys
+   something. A colour with a single meaning reads louder than an accent
+   that merely means "selected".
+
+   Both themes exist because judging colour on a near-black ground is not
+   neutral: simultaneous contrast shifts how a hue reads, and a reference
+   headed for print or a light layout has to be seen on light. The theme
+   follows the system unless the user overrides it, and the override wins
+   in both directions via [data-theme]. */
+
+:root {
+  --titlebar-h: 52px;
+  --detail-w: 340px;
+  --tray-h: 132px;
+  --danger: #d1383d;
+
+  /* Light is the base definition, so no colour exists only inside a media
+     query. */
+  --bg: #fbfbfc;
+  --surface: #ffffff;
+  --surface-2: #f2f2f5;
+  --line: #e2e2e8;
+  --text: #16161a;
+  --muted: #63636e;
+  --faint: #9a9aa6;
+  --emphasis: #46464f;
+
+  /* Selection is drawn on top of arbitrary images, so it is two-tone: a
+     line over a halo of the opposite value. On light the line is dark and
+     the halo pale; on dark they swap. One light outline alone vanishes
+     against a light photograph, and vice versa. */
+  --select: #16161a;
+  --select-halo: rgba(255, 255, 255, 0.9);
+  --marquee-fill: rgba(22, 22, 26, 0.08);
+  --scrim: rgba(251, 251, 252, 0.9);
+  --node-shadow: rgba(0, 0, 0, 0.14);
+  --badge-bg: rgba(255, 255, 255, 0.86);
+  --swatch-edge: rgba(0, 0, 0, 0.16);
+  --primary-hover: #000000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e0e11;
+    --surface: #16161b;
+    --surface-2: #1c1c23;
+    --line: #26262e;
+    --text: #e8e8ed;
+    --muted: #8b8b97;
+    --faint: #5a5a66;
+    --emphasis: #d8d8de;
+    --danger: #e5484d;
+
+    --select: #f2f2f5;
+    --select-halo: rgba(10, 10, 12, 0.85);
+    --marquee-fill: rgba(242, 242, 245, 0.1);
+    --scrim: rgba(14, 14, 17, 0.88);
+    --node-shadow: rgba(0, 0, 0, 0.35);
+    --badge-bg: rgba(14, 14, 17, 0.82);
+    --swatch-edge: rgba(255, 255, 255, 0.14);
+    --primary-hover: #ffffff;
+  }
+}
+
+:root[data-theme='dark'] {
   --bg: #0e0e11;
   --surface: #16161b;
   --surface-2: #1c1c23;
@@ -14,19 +75,17 @@
   --text: #e8e8ed;
   --muted: #8b8b97;
   --faint: #5a5a66;
-
-  /* Selection needs to survive being drawn on top of an arbitrary image,
-     so it is two-tone: a dark halo under a light line. A single light
-     outline disappears against a light photograph. */
-  --select: #f2f2f5;
-  --select-halo: rgba(10, 10, 12, 0.85);
-
   --emphasis: #d8d8de;
   --danger: #e5484d;
 
-  --titlebar-h: 52px;
-  --detail-w: 340px;
-  --tray-h: 132px;
+  --select: #f2f2f5;
+  --select-halo: rgba(10, 10, 12, 0.85);
+  --marquee-fill: rgba(242, 242, 245, 0.1);
+  --scrim: rgba(14, 14, 17, 0.88);
+  --node-shadow: rgba(0, 0, 0, 0.35);
+  --badge-bg: rgba(14, 14, 17, 0.82);
+  --swatch-edge: rgba(255, 255, 255, 0.14);
+  --primary-hover: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -127,7 +186,7 @@ button { font: inherit; }
   font-weight: 500;
   cursor: pointer;
 }
-.primary:hover { background: #ffffff; }
+.primary:hover { background: var(--primary-hover); }
 .primary:disabled { opacity: 0.4; cursor: not-allowed; }
 .primary.small { padding: 5px 12px; border-radius: 7px; }
 
@@ -249,7 +308,7 @@ button { font: inherit; }
   gap: 4px;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(14, 14, 17, 0.82);
+  background: var(--badge-bg);
   backdrop-filter: blur(6px);
   color: var(--text);
   font-size: 11px;
@@ -338,7 +397,7 @@ button { font: inherit; }
   border-radius: 4px;
   overflow: hidden;
   background: var(--surface-2);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 12px var(--node-shadow);
   cursor: grab;
 }
 
@@ -346,7 +405,7 @@ button { font: inherit; }
 .node.is-selected {
   outline: 2px solid var(--select);
   outline-offset: 1px;
-  box-shadow: 0 0 0 4px var(--select-halo), 0 2px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 4px var(--select-halo), 0 2px 12px var(--node-shadow);
 }
 .node.is-noposter img { display: none; }
 
@@ -356,7 +415,7 @@ button { font: inherit; }
   bottom: 6px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(14, 14, 17, 0.8);
+  background: var(--badge-bg);
   font-size: 10px;
   pointer-events: none;
 }
@@ -368,7 +427,7 @@ button { font: inherit; }
 .marquee {
   position: absolute;
   border: 1px solid var(--select);
-  background: rgba(242, 242, 245, 0.1);
+  background: var(--marquee-fill);
   pointer-events: none;
 }
 
@@ -490,7 +549,7 @@ button { font: inherit; }
   inset: var(--titlebar-h) 0 0 0;
   display: grid;
   place-items: center;
-  background: rgba(14, 14, 17, 0.88);
+  background: var(--scrim);
   border: 2px dashed var(--select);
   color: var(--text);
   font-size: 15px;
@@ -511,7 +570,7 @@ button { font: inherit; }
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 28px var(--node-shadow);
   z-index: 60;
 }
 
@@ -522,7 +581,7 @@ button { font: inherit; }
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(8, 8, 10, 0.6);
+  background: var(--scrim);
   z-index: 70;
 }
 
@@ -534,7 +593,7 @@ button { font: inherit; }
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px var(--node-shadow);
 }
 
 .muted { color: var(--muted); line-height: 1.55; }
@@ -560,7 +619,7 @@ button { font: inherit; }
   height: 20px;
   padding: 0;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--swatch-edge);
   cursor: pointer;
   transition: transform 100ms ease, box-shadow 100ms ease;
 }
@@ -592,7 +651,7 @@ button { font: inherit; }
   display: flex;
   justify-content: center;
   padding: 8px;
-  background: linear-gradient(transparent, rgba(14, 14, 17, 0.9));
+  background: linear-gradient(transparent, var(--scrim));
 }
 
 /* ---------- local AI ---------- */
@@ -625,3 +684,7 @@ button { font: inherit; }
   color: var(--muted);
   word-break: break-all;
 }
+
+/* A full-width segmented control for a setting with three states. */
+.modes.wide { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
+.modes.wide button { padding: 6px 0; }

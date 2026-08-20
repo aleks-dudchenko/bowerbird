@@ -5,7 +5,7 @@ const api = window.bowerbird
 // The token is the only thing standing between a web page and the
 // library, so it is shown deliberately — revealed on request, never
 // pre-filled into a visible field, and rotatable in one click.
-export default function Settings({ onClose, root, items }) {
+export default function Settings({ onClose, root, items, theme }) {
   const [status, setStatus] = useState(null)
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -52,9 +52,36 @@ export default function Settings({ onClose, root, items }) {
     <div className="sheet" onMouseDown={onClose}>
       <div className="sheet-body" onMouseDown={(e) => e.stopPropagation()}>
         <div className="detail-head">
-          <strong>Browser extension</strong>
+          <strong>Appearance</strong>
           <div className="spacer" />
           <button className="ghost" onClick={onClose}>Close</button>
+        </div>
+
+        <p className="muted">
+          Colour reads differently against light and dark, so judging a
+          reference for print on a near-black background will mislead you.
+        </p>
+
+        <div className="modes wide">
+          {[
+            ['system', 'System'],
+            ['light', 'Light'],
+            ['dark', 'Dark'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              className={theme?.source === value ? 'is-active' : ''}
+              onClick={() => theme?.choose(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <hr className="rule" />
+
+        <div className="detail-head">
+          <strong>Browser extension</strong>
         </div>
 
         <p className="muted">

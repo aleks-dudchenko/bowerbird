@@ -7,6 +7,7 @@ import {
 } from './ingest.js'
 import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './spaces.js'
 import { getToken, rotateToken, serverStatus, openPairing } from './server.js'
+import { applyTheme, currentTheme } from './theme.js'
 import { indexLibrary, query as semanticQuery, autoTag, cancelIndexing } from './ai.js'
 import { helperPath, searchedPaths } from './helper.js'
 import { join } from 'node:path'
@@ -30,6 +31,13 @@ export function registerIpc() {
   })
 
   ipcMain.handle('settings:patch', async (_e, patch) => writeSettings(patch))
+
+  ipcMain.handle('theme:get', async () => currentTheme())
+
+  ipcMain.handle('theme:set', async (_e, source) => {
+    await writeSettings({ theme: source })
+    return applyTheme(source)
+  })
 
   // ---- library ------------------------------------------------------
 
