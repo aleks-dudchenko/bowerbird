@@ -1,4 +1,12 @@
 :root {
+  /* Monochrome on purpose. This is a library of other people's colour —
+     any hue in the interface competes with the work, and it makes judging
+     a palette in the colour filter measurably harder. State is carried by
+     value and weight instead of by hue.
+
+     Red is the one exception and it means exactly one thing: this
+     destroys something. A colour with a single meaning reads louder than
+     an accent that merely means "selected". */
   --bg: #0e0e11;
   --surface: #16161b;
   --surface-2: #1c1c23;
@@ -6,7 +14,14 @@
   --text: #e8e8ed;
   --muted: #8b8b97;
   --faint: #5a5a66;
-  --accent: #6f7bff;
+
+  /* Selection needs to survive being drawn on top of an arbitrary image,
+     so it is two-tone: a dark halo under a light line. A single light
+     outline disappears against a light photograph. */
+  --select: #f2f2f5;
+  --select-halo: rgba(10, 10, 12, 0.85);
+
+  --emphasis: #d8d8de;
   --danger: #e5484d;
 
   --titlebar-h: 52px;
@@ -86,7 +101,7 @@ body {
 .path:hover { border-color: var(--faint); }
 
 .count { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
-.progress { color: var(--accent); font-size: 12px; font-variant-numeric: tabular-nums; }
+.progress { color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ---------- buttons ---------- */
 
@@ -103,15 +118,15 @@ button { font: inherit; }
 .ghost:hover { color: var(--text); border-color: var(--faint); }
 
 .primary {
-  background: var(--accent);
+  background: var(--text);
   border: none;
-  color: #fff;
+  color: var(--bg);
   border-radius: 8px;
   padding: 9px 18px;
   font-weight: 500;
   cursor: pointer;
 }
-.primary:hover { filter: brightness(1.1); }
+.primary:hover { background: #ffffff; }
 .primary:disabled { opacity: 0.4; cursor: not-allowed; }
 .primary.small { padding: 5px 12px; border-radius: 7px; }
 
@@ -178,7 +193,7 @@ button { font: inherit; }
 }
 .search:focus, .tray-search:focus, .space-name:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--emphasis);
 }
 
 .rail {
@@ -216,7 +231,10 @@ button { font: inherit; }
 }
 
 .card:hover { border-color: var(--faint); transform: translateY(-1px); }
-.card.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card.is-selected {
+  border-color: var(--select);
+  box-shadow: 0 0 0 1px var(--select), 0 0 0 3px var(--select-halo);
+}
 .card img { display: block; width: 100%; height: auto; }
 .card.is-noposter img { display: none; }
 .card.is-noposter { aspect-ratio: 16 / 9; background: var(--surface-2); }
@@ -286,7 +304,7 @@ button { font: inherit; }
   color: var(--text);
   cursor: pointer;
 }
-.space-card:hover { border-color: var(--accent); }
+.space-card:hover { border-color: var(--emphasis); }
 .space-card span { color: var(--faint); font-size: 11px; }
 
 .canvas {
@@ -324,7 +342,11 @@ button { font: inherit; }
 }
 
 .node img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.node.is-selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+.node.is-selected {
+  outline: 2px solid var(--select);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px var(--select-halo), 0 2px 12px rgba(0, 0, 0, 0.35);
+}
 .node.is-noposter img { display: none; }
 
 .node-badge {
@@ -338,14 +360,14 @@ button { font: inherit; }
   pointer-events: none;
 }
 
-.guide { position: absolute; background: var(--accent); pointer-events: none; }
+.guide { position: absolute; background: var(--select); pointer-events: none; }
 .guide-x { top: -10000px; height: 20000px; width: 1px; }
 .guide-y { left: -10000px; width: 20000px; height: 1px; }
 
 .marquee {
   position: absolute;
-  border: 1px solid var(--accent);
-  background: rgba(111, 123, 255, 0.12);
+  border: 1px solid var(--select);
+  background: rgba(242, 242, 245, 0.1);
   pointer-events: none;
 }
 
@@ -391,7 +413,7 @@ button { font: inherit; }
   background: var(--surface-2);
   cursor: grab;
 }
-.tray-item:hover { border-color: var(--accent); }
+.tray-item:hover { border-color: var(--emphasis); }
 .tray-item img { height: 100%; width: auto; display: block; }
 .tray-empty { color: var(--faint); align-self: center; }
 .tray.is-collapsed .tray-strip { display: none; }
@@ -431,7 +453,7 @@ button { font: inherit; }
   font: inherit;
   resize: vertical;
 }
-.field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--emphasis); }
 
 .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
 
@@ -445,7 +467,7 @@ button { font: inherit; }
   cursor: pointer;
 }
 .tag:hover { color: var(--text); border-color: var(--faint); }
-.tag.is-active { border-color: var(--accent); color: var(--text); }
+.tag.is-active { border-color: var(--emphasis); color: var(--text); }
 .tag em { font-style: normal; color: var(--faint); }
 
 .meta {
@@ -457,7 +479,7 @@ button { font: inherit; }
 }
 .meta dt { color: var(--faint); }
 .meta dd { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
-.meta a { color: var(--accent); }
+.meta a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
 
 /* ---------- overlays ---------- */
@@ -468,7 +490,7 @@ button { font: inherit; }
   display: grid;
   place-items: center;
   background: rgba(14, 14, 17, 0.88);
-  border: 2px dashed var(--accent);
+  border: 2px dashed var(--select);
   color: var(--text);
   font-size: 15px;
   font-weight: 500;
@@ -522,7 +544,7 @@ button { font: inherit; }
 
 /* ---------- search facets ---------- */
 
-.ghost.is-active { color: var(--text); border-color: var(--accent); }
+.ghost.is-active { color: var(--text); border-color: var(--emphasis); }
 
 .swatches {
   display: flex;
@@ -542,7 +564,7 @@ button { font: inherit; }
   transition: transform 100ms ease, box-shadow 100ms ease;
 }
 .swatch:hover { transform: scale(1.12); }
-.swatch.is-active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+.swatch.is-active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--select); }
 
 /* ---------- trash ---------- */
 
@@ -583,14 +605,14 @@ button { font: inherit; }
   border-radius: 8px;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  color: var(--accent);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
 /* Suggestions are visually distinct from tags a person typed, and one
    click promotes them. A guess must never look like a decision. */
 .tag.is-suggested { border-style: dashed; color: var(--faint); }
-.tag.is-suggested:hover { color: var(--accent); border-color: var(--accent); }
+.tag.is-suggested:hover { color: var(--text); border-color: var(--select); }
 
 .ai-progress.is-error { color: var(--danger); border-color: var(--danger); }
 

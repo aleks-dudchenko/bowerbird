@@ -23,6 +23,12 @@ take ownership of them.
 Everything runs on your machine. No account, no subscription, no telemetry,
 no API keys.
 
+The interface is deliberately monochrome. This is a library of other
+people's colour, and any hue in the chrome competes with the work — most
+concretely, it makes judging a palette in the colour filter harder. Red
+appears in exactly one place and means one thing: this destroys
+something.
+
 ## Requirements
 
 macOS 13 or newer.
