@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { mkdir, readFile, writeFile, readdir, stat, rename, unlink } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, readdir, stat, rename, unlink, rm } from 'node:fs/promises'
 import { join, dirname, resolve, sep } from 'node:path'
 import { migration } from '../shared/migrate.js'
 
@@ -76,21 +76,44 @@ export async function writeAtomic(path, contents) {
   }
 }
 
-export async function ensureLibrary(root) {
-  // The cache folder was called .zbirka before the project was renamed.
-  // It is only a cache, so losing it would cost nothing but regenerated
-  // thumbnails — but leaving it behind would litter the user's library
-  // with a folder under a dead name forever.
+// The cache folder was called .zbirka before the project was renamed. A
+// plain rename is not enough: ensureLibrary itself creates the new folder,
+// so after one launch the destination always exists and a rename-or-skip
+// check would refuse forever, leaving a dead-named folder in the user's
+// library permanently. Merge the contents instead.
+async function carryOverLegacyCache(root) {
+  const legacy = join(root, '.zbirka')
   try {
-    await stat(join(root, '.zbirka'))
-    try {
-      await stat(cacheDir(root))
-    } catch {
-      await rename(join(root, '.zbirka'), cacheDir(root))
-    }
+    await stat(legacy)
   } catch {
-    /* nothing to carry over */
+    return // nothing to carry over
   }
+
+  const target = cacheDir(root)
+  await mkdir(target, { recursive: true })
+
+  for (const entry of await readdir(legacy, { withFileTypes: true })) {
+    const from = join(legacy, entry.name)
+    const to = join(target, entry.name)
+    try {
+      await rename(from, to)
+    } catch {
+      // The destination already exists, so move what is inside it rather
+      // than the folder itself.
+      if (entry.isDirectory()) {
+        await mkdir(to, { recursive: true })
+        for (const child of await readdir(from)) {
+          await rename(join(from, child), join(to, child)).catch(() => {})
+        }
+      }
+    }
+  }
+
+  await rm(legacy, { recursive: true, force: true }).catch(() => {})
+}
+
+export async function ensureLibrary(root) {
+  await carryOverLegacyCache(root)
 
   for (const d of [itemsDir(root), spacesDir(root), thumbsDir(root), previewsDir(root)]) {
     await mkdir(d, { recursive: true })

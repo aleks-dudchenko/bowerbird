@@ -139,6 +139,19 @@ app.whenReady().then(async () => {
   ok('what was inside it came along',
     !!(await stat(join(cacheDir(OLD_ROOT), 'thumbs', 'marker.webp')).catch(() => null)))
 
+  // The case that actually happened: one launch had already created the
+  // new folder, so a rename-or-skip check refused forever and left the
+  // old one sitting in the library.
+  const MIXED = join(BASE, 'mixed-library')
+  await mkdir(join(MIXED, '.zbirka', 'thumbs'), { recursive: true })
+  await writeFile(join(MIXED, '.zbirka', 'thumbs', 'old.webp'), 'x')
+  await mkdir(join(MIXED, '.bowerbird', 'thumbs'), { recursive: true })
+  await ensureLibrary(MIXED)
+  ok('an already-created destination does not block the move',
+    !(await stat(join(MIXED, '.zbirka')).catch(() => null)))
+  ok('the old contents are merged in',
+    !!(await stat(join(cacheDir(MIXED), 'thumbs', 'old.webp')).catch(() => null)))
+
   console.log('\n7. Old sidecars migrate on load')
   // Simulate a library written by the first version: no kind, no schema,
   // no fields added since. Every feature that branches on kind was
