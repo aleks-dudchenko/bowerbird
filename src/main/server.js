@@ -17,6 +17,23 @@ let server = null
 let bound = false
 let bindError = null
 
+// Pairing window. Copy-pasting a token works but is a poor first run, and
+// an endpoint that simply hands the token to anyone would defeat the point
+// of having one. The compromise: the token is only obtainable while the
+// user has explicitly opened a short window from inside the app, and only
+// to a caller whose Origin is an extension — a web page cannot forge that
+// header, so no page in an open tab can reach it.
+const PAIR_WINDOW_MS = 120_000
+let pairingUntil = 0
+
+export function openPairing() {
+  pairingUntil = Date.now() + PAIR_WINDOW_MS
+  return { until: pairingUntil, seconds: PAIR_WINDOW_MS / 1000 }
+}
+
+export const closePairing = () => { pairingUntil = 0 }
+export const pairingOpen = () => Date.now() < pairingUntil
+
 export async function getToken() {
   const s = await readSettings()
   if (s.serverToken) return s.serverToken
@@ -162,6 +179,22 @@ export function startServer(onSaved) {
   server = createServer(async (req, res) => {
     const origin = req.headers.origin
     if (req.method === 'OPTIONS') return send(res, 204, {}, origin)
+    if (req.method === 'POST' && req.url === '/pair') {
+      if (!allowedOrigin(origin)) {
+        return send(res, 403, { error: 'only a browser extension can pair' }, origin)
+      }
+      if (!pairingOpen()) {
+        return send(
+          res,
+          403,
+          { error: 'open Settings in Zbirka and click Pair extension first' },
+          origin
+        )
+      }
+      closePairing() // single use: a window that stays open is not a window
+      return send(res, 200, { token: await getToken() }, origin)
+    }
+
     if (req.method !== 'POST' || req.url !== '/save') {
       return send(res, 404, { error: 'not found' }, origin)
     }

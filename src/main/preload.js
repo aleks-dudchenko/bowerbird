@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('zbirka', {
   serverStatus: () => ipcRenderer.invoke('server:status'),
   rotateToken: () => ipcRenderer.invoke('server:rotateToken'),
   revealExtension: () => ipcRenderer.invoke('extension:reveal'),
+  openPairing: () => ipcRenderer.invoke('server:openPairing'),
 
   onEvent: (cb) => {
     const handler = (_e, payload) => cb(payload)

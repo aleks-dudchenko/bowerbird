@@ -13,10 +13,11 @@
     "smoke": "electron scripts/smoke.js",
     "test": "node --test \"test/*.test.js\"",
     "test:server": "electron scripts/server.test.js",
-    "verify": "npm run build && npm run lint && npm test && npm run smoke && npm run test:server",
+    "verify": "npm run build && npm run lint && npm test && npm run smoke && npm run test:server && npm run test:pair",
     "lint": "eslint .",
     "test:clip": "electron scripts/clip.test.js",
-    "dist": "npm run build && electron-builder --mac"
+    "dist": "npm run build && electron-builder --mac",
+    "test:pair": "electron scripts/pair.test.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

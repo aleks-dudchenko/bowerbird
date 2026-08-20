@@ -24,6 +24,7 @@ export default [
         window: 'readonly', document: 'readonly', console: 'readonly',
         process: 'readonly', Buffer: 'readonly', fetch: 'readonly',
         setTimeout: 'readonly', clearTimeout: 'readonly', crypto: 'readonly',
+        setInterval: 'readonly', clearInterval: 'readonly',
         navigator: 'readonly', Headers: 'readonly', Response: 'readonly',
         URL: 'readonly', TextDecoder: 'readonly', Float32Array: 'readonly',
       },

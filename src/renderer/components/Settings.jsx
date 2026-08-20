@@ -12,6 +12,7 @@ export default function Settings({ onClose, root, items }) {
   const [ai, setAi] = useState(null)
   const [helper, setHelper] = useState(null)
   const [extPath, setExtPath] = useState(null)
+  const [pairing, setPairing] = useState(0)
   const [result, setResult] = useState(null)
 
   useEffect(() => {
@@ -21,6 +22,19 @@ export default function Settings({ onClose, root, items }) {
   }, [])
 
   const busy = ai && ai.done !== ai.total
+
+  // A visible countdown, because a window the user cannot see the end of
+  // is one they will miss.
+  useEffect(() => {
+    if (pairing <= 0) return
+    const t = setInterval(() => setPairing((n) => Math.max(0, n - 1)), 1000)
+    return () => clearInterval(t)
+  }, [pairing])
+
+  async function pair() {
+    const { seconds } = await api.openPairing()
+    setPairing(seconds)
+  }
 
   async function rotate() {
     const { token } = await api.rotateToken()
@@ -51,6 +65,9 @@ export default function Settings({ onClose, root, items }) {
         </p>
 
         <div className="button-row">
+          <button className="primary small" onClick={pair}>
+            {pairing > 0 ? `Waiting for the extension · ${pairing}s` : 'Pair extension'}
+          </button>
           <button
             className="ghost"
             onClick={async () => setExtPath((await api.revealExtension()).path)}

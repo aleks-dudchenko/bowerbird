@@ -87,13 +87,16 @@ on any web store and is not meant to be: load it unpacked from this repo.
 2. In the browser open its extensions page (`comet://extensions`,
    `chrome://extensions`, `brave://extensions` …).
 3. Turn on **Developer mode**, choose **Load unpacked**, pick that folder.
-4. Open the extension's **options** and paste the token from Settings.
+4. In Zbirka click **Pair extension**, then press **Connect** on the
+   extension's options page. No token to copy.
 
 Right-click any image or video on a page → **Save to Zbirka**.
 
-The app listens on `127.0.0.1:47821`, only while it is running. The token
-is the only credential; rotating it in Settings revokes the old one at
-once. Keep the folder where it is — a Chromium browser identifies an
+The app listens on `127.0.0.1:47821`, only while it is running. Pairing
+only answers while you have opened a two-minute window from inside the
+app, only to a caller whose origin is an extension — a web page cannot
+forge that header — and only once per window. Rotating the token in
+Settings revokes the old one at once. Keep the folder where it is — a Chromium browser identifies an
 unpacked extension by its path, so moving it means loading it again.
 
 ## Building a release

@@ -6,7 +6,7 @@ import {
   ingestFile, trashItem, restoreItem, purgeItem, updateSidecar, kindOf, backfillPalette,
 } from './ingest.js'
 import { listSpaces, readSpace, writeSpace, createSpace, removeSpace } from './spaces.js'
-import { getToken, rotateToken, serverStatus } from './server.js'
+import { getToken, rotateToken, serverStatus, openPairing } from './server.js'
 import { indexLibrary, query as semanticQuery, autoTag, cancelIndexing } from './ai.js'
 import { helperPath, searchedPaths } from './helper.js'
 import { join } from 'node:path'
@@ -149,6 +149,7 @@ export function registerIpc() {
 
   ipcMain.handle('server:status', async () => ({ ...serverStatus(), token: await getToken() }))
   ipcMain.handle('server:rotateToken', async () => ({ token: await rotateToken() }))
+  ipcMain.handle('server:openPairing', async () => openPairing())
 
   // Loading an unpacked extension means pointing Chrome at a folder, so
   // the app has to be able to show the user where that folder is.
